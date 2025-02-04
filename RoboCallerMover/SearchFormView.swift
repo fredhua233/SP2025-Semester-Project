@@ -3,11 +3,10 @@
 //  roboCaller
 //  allows users to search for items
 //  Created by Michelle Zheng on 2/2/25.
-// ,,,,,,,,,,,,
+// 
 
 
 import SwiftUI
-//this is for repoooo000
 struct SearchFormView: View {
     // MARK: - State variables
     @State private var fromLocation: String = ""
@@ -16,8 +15,8 @@ struct SearchFormView: View {
     // For dropdown Picker
     enum MoveSize: String, CaseIterable {
         case small = "Small (1–10 small items)"
-        case medium = "Medium (1–5 small, 1–3 large)"
-        case large = "Large (1–10 all larger items)"
+        case medium = "Medium (1–5 small items, 1–3 large items)"
+        case large = "Large (5+ all large items)"
     }
     @State private var selectedMoveSize: MoveSize = .small
     

@@ -11,7 +11,7 @@ import SwiftUI
 struct RoboCallerMoverApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootTabView()
         }
     }
 }
