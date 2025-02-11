@@ -2,7 +2,7 @@ Setup
 
 python -m venv RoboCallerVenv
 source RoboCallerVenv/bin/activate  
-pip install requirements.txt
+pip install -r requirements.txt
 
 Start the app
 

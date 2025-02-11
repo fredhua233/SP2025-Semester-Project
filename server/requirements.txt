@@ -1,5 +1,5 @@
-fastapi==0.78.0
-uvicorn[standard]==0.17.6
-pymongo==4.1.1
-motor==3.0.0  # if you are using async programming with MongoDB
-python-dotenv==0.20.0  # for environment variable management
+fastapi
+uvicorn[standard]
+sqlalchemy
+motor
+python-dotenv
