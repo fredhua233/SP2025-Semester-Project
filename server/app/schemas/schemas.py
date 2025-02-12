@@ -11,6 +11,11 @@ class MovingQueryBase(BaseModel):
     moving_companies_count: int
     moving_companies: str
     phone_call_information_ids: str
+    latitude_from: float
+    longitude_from: float
+    latitude_to: float
+    longitude_to: float
+    availability: str
 
 class MovingQueryCreate(MovingQueryBase):
     pass
@@ -24,6 +29,8 @@ class MovingQuery(MovingQueryBase):
 class MovingCompanyBase(BaseModel):
     name: str
     phone_number: str
+    latitude: float
+    longitude: float
 
 class MovingCompanyCreate(MovingCompanyBase):
     pass

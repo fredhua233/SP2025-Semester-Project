@@ -18,11 +18,16 @@ def get_db():
     finally:
         db.close()
 
+@app.post("/get_moving_companies/")
+async def get_moving_companies(moving_query: schemas.MovingQueryBase, db: Session = Depends(get_db)):
+    return await services.get_moving_companies(moving_query=moving_query, db=db)
+
+@app.post("/call_moving_companies/")
+async def call_moving_companies(moving_query: schemas.MovingQueryBase, moving_company_number: str, db: Session = Depends(get_db)):
+    return await services.create_phone_call(moving_company_number=moving_company_number, items=moving_query.items, availability=moving_query.availability, from_location=moving_query.location_from, to_location=moving_query.location_to)
+
+#===============================================================================
 # MovingQuery routes
-@app.post("/moving_queries/", response_model=schemas.MovingQuery)
-def create_moving_query(moving_query: schemas.MovingQueryCreate, db: Session = Depends(get_db)):
-    # services.make_calls(moving_query)
-    return crud.create_moving_query(db=db, moving_query=moving_query)
 
 @app.get("/moving_queries/{query_id}", response_model=schemas.MovingQuery)
 def read_moving_query(query_id: int, db: Session = Depends(get_db)):
@@ -78,3 +83,4 @@ def update_phone_call(call_id: int, phone_call: schemas.PhoneCallCreate, db: Ses
 @app.delete("/phone_calls/{call_id}", response_model=schemas.PhoneCall)
 def delete_phone_call(call_id: int, db: Session = Depends(get_db)):
     return crud.delete_phone_call(db=db, call_id=call_id)
+

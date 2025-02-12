@@ -1,9 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, Float
 from sqlalchemy.orm import relationship
 from app.database.database import Base
 import datetime
-
-
 
 class MovingQuery(Base):
     __tablename__ = 'moving_queries'
@@ -15,9 +13,12 @@ class MovingQuery(Base):
     items = Column(String)
     quotes_found = Column(Boolean, default=False)
     moving_companies_count = Column(Integer)
-    moving_companies = Column(String) 
-    phone_call_information_ids = Column(String)  
-
+    moving_company_ids = Column(String)
+    phone_call_information_ids = Column(String)
+    latitude_from = Column(Float)
+    longitude_from = Column(Float)
+    latitude_to = Column(Float)
+    longitude_to = Column(Float)
 
 class MovingCompany(Base):
     __tablename__ = 'moving_companies'
@@ -25,6 +26,8 @@ class MovingCompany(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     phone_number = Column(String, index=True)
+    latitude = Column(Float)
+    longitude = Column(Float)
 
 class PhoneCalls(Base):
     __tablename__ = 'phone_calls'
