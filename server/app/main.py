@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.models import models
 from app.schemas import schemas
 from app.crud import crud
+from app.services import services
 from app.database.database import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
@@ -20,6 +21,7 @@ def get_db():
 # MovingQuery routes
 @app.post("/moving_queries/", response_model=schemas.MovingQuery)
 def create_moving_query(moving_query: schemas.MovingQueryCreate, db: Session = Depends(get_db)):
+    # services.make_calls(moving_query)
     return crud.create_moving_query(db=db, moving_query=moving_query)
 
 @app.get("/moving_queries/{query_id}", response_model=schemas.MovingQuery)
