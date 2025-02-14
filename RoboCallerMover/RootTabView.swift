@@ -26,11 +26,18 @@ struct RootTabView: View {
             }
 
             NavigationView {
-                QuoteResultsView()
+                QuoteResultsView(
+                    fromLocation: "N/A",
+                    toLocation: "N/A",
+                    items: "",
+                    availability: "",
+                    quotes: []
+                )
             }
             .tabItem {
                 Label("Quotes", systemImage: "doc.text.magnifyingglass")
             }
+
             
             NavigationView {
                 CallTranscriptCompanyView()
