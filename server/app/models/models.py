@@ -15,10 +15,6 @@ class MovingQuery(Base):
     moving_companies_count = Column(Integer)
     moving_company_ids = Column(String)
     phone_call_information_ids = Column(String)
-    latitude_from = Column(Float)
-    longitude_from = Column(Float)
-    latitude_to = Column(Float)
-    longitude_to = Column(Float)
 
 class MovingCompany(Base):
     __tablename__ = 'moving_companies'

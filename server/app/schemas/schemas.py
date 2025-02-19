@@ -11,10 +11,6 @@ class MovingQueryBase(BaseModel):
     moving_companies_count: int
     moving_companies: str
     phone_call_information_ids: str
-    latitude_from: float
-    longitude_from: float
-    latitude_to: float
-    longitude_to: float
     availability: str
 
 class MovingQueryCreate(MovingQueryBase):

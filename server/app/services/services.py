@@ -1,16 +1,17 @@
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, HTTPException
 import requests
-
+from app.utils import get_lat_long
 from app.models import models
 from app.schemas import schemas
-from geopy.distance import geodesic
 
 # Function that takes a city and returns the moving companies in that city
 async def get_moving_companies(moving_query: schemas.MovingQueryBase, db: Session):
     api_key = "AIzaSyAL8SuOV_yOBVlIMsg1Wlltj2Zw9gzSjSU"
     query = "moving company"
-    location = f"{moving_query.latitude_from},{moving_query.longitude_from}"
+    location = await get_lat_long(moving_query.location_from, api_key)
+    if location is None:
+        raise HTTPException(status_code=400, detail="Invalid location provided")
     radius = 80467  # 50 miles in meters
     url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&location={location}&radius={radius}&key={api_key}"
 
@@ -20,14 +21,16 @@ async def get_moving_companies(moving_query: schemas.MovingQueryBase, db: Sessio
 
     results = response.json().get("results", [])
     nearby_companies = []
-    for result in results:
+    for result in results[:5]:
         place_id = result["place_id"]
         details_url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={place_id}&key={api_key}"
         details_response = requests.get(details_url)
         if details_response.status_code != 200:
             continue
         details_result = details_response.json().get("result", {})
-        phone_number = details_result.get("formatted_phone_number")
+        phone_number = "+1" + details_result.get("formatted_phone_number").translate({ord(c): None for c in "()- "})
+        # https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=photo_reference&key=api_key
+        # ^^^ use as a get request to get the image of the moving company
 
         company = {
             "name": result["name"],
@@ -36,13 +39,11 @@ async def get_moving_companies(moving_query: schemas.MovingQueryBase, db: Sessio
             "user_ratings_total": result.get("user_ratings_total"),
             "place_id": place_id,
             "location": result["geometry"]["location"],
-            "phone_number": phone_number
+            "phone_number": phone_number,
         }
         nearby_companies.append(company)
 
     return {"moving_companies": nearby_companies}
-
-# Function that takes a moving company, an origin and destination city and returns true or false if the query has already been made
 
 
 # Function that takes moving companies and makes a phone call to each of them
