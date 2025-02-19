@@ -9,9 +9,17 @@ import SwiftUI
 
 @main
 struct RoboCallerMoverApp: App {
+    @StateObject private var authManager = AuthManager()
+
     var body: some Scene {
         WindowGroup {
-            RootTabView()
+            if authManager.isLoggedIn {
+                RootTabView()
+                    .environmentObject(authManager)
+            } else {
+                LoginScreen()
+                    .environmentObject(authManager)
+            }
         }
     }
 }
