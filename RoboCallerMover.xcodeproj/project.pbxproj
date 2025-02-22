@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		3D795A372D6A7BEE008B7C7E /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = 3D795A362D6A7BEE008B7C7E /* Auth */; };
+		3D795A392D6A7BF6008B7C7E /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = 3D795A382D6A7BF6008B7C7E /* PostgREST */; };
+		3D795A3B2D6A7C0A008B7C7E /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = 3D795A3A2D6A7C0A008B7C7E /* Functions */; };
+		3D795A3D2D6A7C0F008B7C7E /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = 3D795A3C2D6A7C0F008B7C7E /* Realtime */; };
+		3D795A3F2D6A7C13008B7C7E /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = 3D795A3E2D6A7C13008B7C7E /* Storage */; };
+		3D795A412D6A7C16008B7C7E /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 3D795A402D6A7C16008B7C7E /* Supabase */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		3D593D5F2D52C81700EA7E90 /* RoboCallerMover.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoboCallerMover.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +32,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3D795A3B2D6A7C0A008B7C7E /* Functions in Frameworks */,
+				3D795A392D6A7BF6008B7C7E /* PostgREST in Frameworks */,
+				3D795A412D6A7C16008B7C7E /* Supabase in Frameworks */,
+				3D795A372D6A7BEE008B7C7E /* Auth in Frameworks */,
+				3D795A3F2D6A7C13008B7C7E /* Storage in Frameworks */,
+				3D795A3D2D6A7C0F008B7C7E /* Realtime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +48,7 @@
 			isa = PBXGroup;
 			children = (
 				3D593D612D52C81700EA7E90 /* RoboCallerMover */,
+				3D795A352D6A7BD5008B7C7E /* Frameworks */,
 				3D593D602D52C81700EA7E90 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +59,13 @@
 				3D593D5F2D52C81700EA7E90 /* RoboCallerMover.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3D795A352D6A7BD5008B7C7E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -65,6 +88,12 @@
 			);
 			name = RoboCallerMover;
 			packageProductDependencies = (
+				3D795A362D6A7BEE008B7C7E /* Auth */,
+				3D795A382D6A7BF6008B7C7E /* PostgREST */,
+				3D795A3A2D6A7C0A008B7C7E /* Functions */,
+				3D795A3C2D6A7C0F008B7C7E /* Realtime */,
+				3D795A3E2D6A7C13008B7C7E /* Storage */,
+				3D795A402D6A7C16008B7C7E /* Supabase */,
 			);
 			productName = RoboCallerMover;
 			productReference = 3D593D5F2D52C81700EA7E90 /* RoboCallerMover.app */;
@@ -94,6 +123,9 @@
 			);
 			mainGroup = 3D593D562D52C81700EA7E90;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3D795A2E2D6A785E008B7C7E /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3D593D602D52C81700EA7E90 /* Products */;
 			projectDirPath = "";
@@ -324,6 +356,50 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3D795A2E2D6A785E008B7C7E /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3D795A362D6A7BEE008B7C7E /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3D795A2E2D6A785E008B7C7E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+		3D795A382D6A7BF6008B7C7E /* PostgREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3D795A2E2D6A785E008B7C7E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = PostgREST;
+		};
+		3D795A3A2D6A7C0A008B7C7E /* Functions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3D795A2E2D6A785E008B7C7E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Functions;
+		};
+		3D795A3C2D6A7C0F008B7C7E /* Realtime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3D795A2E2D6A785E008B7C7E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Realtime;
+		};
+		3D795A3E2D6A7C13008B7C7E /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3D795A2E2D6A785E008B7C7E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Storage;
+		};
+		3D795A402D6A7C16008B7C7E /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3D795A2E2D6A785E008B7C7E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3D593D572D52C81700EA7E90 /* Project object */;
 }
