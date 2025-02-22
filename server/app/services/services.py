@@ -1,16 +1,21 @@
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, HTTPException
+import httpx
 import requests
 from app.utils import get_lat_long
-from app.models import models
+# from app.models import models
 from app.schemas import schemas
+from app.database.database import get_or_create_moving_company, create_inquiry
+import os
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
 
 # Function that takes a city and returns the moving companies in that city
-async def get_moving_companies(moving_query: schemas.MovingQueryBase, db: Session):
+async def get_moving_companies(moving_query: schemas.MovingQuery, moving_query_id):
+    print(moving_query_id)
     api_key = os.getenv("MAPS_API_KEY")
     query = "moving company"
     location = await get_lat_long(moving_query.location_from, api_key)
@@ -25,6 +30,7 @@ async def get_moving_companies(moving_query: schemas.MovingQueryBase, db: Sessio
 
     results = response.json().get("results", [])
     nearby_companies = []
+
     for result in results[:5]:
         place_id = result["place_id"]
         details_url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={place_id}&key={api_key}"
@@ -41,13 +47,19 @@ async def get_moving_companies(moving_query: schemas.MovingQueryBase, db: Sessio
             "address": result["formatted_address"],
             "rating": result.get("rating"),
             "user_ratings_total": result.get("user_ratings_total"),
-            "place_id": place_id,
-            "location": result["geometry"]["location"],
+            "latitude": result["geometry"]["location"]["lat"],
+            "longitude": result["geometry"]["location"]["lng"],
             "phone_number": phone_number,
         }
-        nearby_companies.append(company)
+        company_id = get_or_create_moving_company(company)
+        create_inquiry(moving_query_id, company_id)
 
+        nearby_companies.append(company)
+        
+
+    
     return {"moving_companies": nearby_companies}
+
 
 
 # Function that takes moving companies and makes a phone call to each of them
@@ -97,6 +109,7 @@ async def create_phone_call(moving_company_number, items, availability, from_loc
     if response.status_code == 201:
         print('Call created successfully')
         print(response.json())
+        
     else:
         print('Failed to create call')
         print(response.text)
@@ -114,3 +127,29 @@ async def make_calls(moving_query: schemas.MovingQueryCreate, moving_companies: 
             to_location=moving_query.location_to,
             phone_number_id=company["phone_number"]
         )
+
+#returns price
+async def process_phone_call(transcript : str):
+    #parse transcript to get price
+
+    prompt = "You are given the following transcript of a phone call with a moving company. The customer is asking for a quote for their move. The transcript is as follows: " + transcript + " Please provide the price quoted by the moving company and only the price in the form of a float."
+    url = "https://api.openai.com/v1/engines/davinci/completions"
+    headers = {
+        "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+    }
+    data = {
+        "model": "text-davinci-003",
+        "prompt": prompt,
+        "max_tokens": 50
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, json=data, headers=headers)
+    print(response.json())
+    if response.status_code != 200:
+        raise HTTPException(status_code=400, detail="Error processing your request")
+
+    return response
+
+
+
+    

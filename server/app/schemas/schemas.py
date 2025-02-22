@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List
 
-class MovingQueryBase(BaseModel):
+class MovingQuery(BaseModel):
     location_from: str
     location_to: str
     created_at: datetime
@@ -10,15 +10,29 @@ class MovingQueryBase(BaseModel):
     items_details: str
     availability: str
     user_id: str
+    inquiries: List[int]
 
-class MovingQueryCreate(MovingQueryBase):
+class MovingInquiry(BaseModel):
+    moving_company_id: int
+    created_at: datetime 
+    price: float #-1 if not yet found or price once found
+    phone_call_transcript: str
+    moving_query_id: int
+
+class MovingCompany(BaseModel):
+    name: str
+    phone_number: str
+    latitude: float
+    longitude: float
+    address: str
+    rating: float
+    user_ratings_total: int
+
+
+
+class MovingQueryCreate(MovingQuery):
     pass
 
-class MovingQuery(MovingQueryBase):
-    id: int
-
-    class Config:
-        orm_mode: True
 
 class MovingCompanyBase(BaseModel):
     name: str

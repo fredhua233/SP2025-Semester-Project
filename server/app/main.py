@@ -1,12 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-from app.models import models
 from app.schemas import schemas
-from app.crud import crud
+# from app.crud import crud
 from app.services import services
-from app.database.database import SessionLocal, engine
+from app.database.database import add_moving_query
 
-models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -19,11 +17,14 @@ def get_db():
         db.close()
 
 @app.post("/get_moving_companies/")
-async def get_moving_companies(moving_query: schemas.MovingQueryBase, db: Session = Depends(get_db)):
-    return await services.get_moving_companies(moving_query=moving_query, db=db)
+async def get_moving_companies(moving_query: schemas.MovingQuery, background_tasks: BackgroundTasks):
+    moving_query_id = add_moving_query(moving_query=moving_query)
+    background_tasks.add_task(services.get_moving_companies, moving_query, moving_query_id)
+
+    return {"moving_query_id": moving_query_id}
 
 @app.post("/call_moving_companies/")
-async def call_moving_companies(moving_query: schemas.MovingQueryBase, moving_company_number: str, db: Session = Depends(get_db)):
+async def call_moving_companies(moving_query: schemas.MovingQuery, moving_company_number: str, db: Session = Depends(get_db)):
     return await services.create_phone_call(moving_company_number=moving_company_number, items=moving_query.items, availability=moving_query.availability, from_location=moving_query.location_from, to_location=moving_query.location_to)
 
 #===============================================================================
