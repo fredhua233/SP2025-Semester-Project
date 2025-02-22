@@ -5,13 +5,11 @@ from typing import Optional, List
 class MovingQueryBase(BaseModel):
     location_from: str
     location_to: str
-    date: str
+    created_at: datetime
     items: str
-    quotes_found: bool
-    moving_companies_count: int
-    moving_companies: str
-    phone_call_information_ids: str
+    items_details: str
     availability: str
+    user_id: str
 
 class MovingQueryCreate(MovingQueryBase):
     pass

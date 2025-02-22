@@ -4,10 +4,14 @@ import requests
 from app.utils import get_lat_long
 from app.models import models
 from app.schemas import schemas
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 # Function that takes a city and returns the moving companies in that city
 async def get_moving_companies(moving_query: schemas.MovingQueryBase, db: Session):
-    api_key = "AIzaSyAL8SuOV_yOBVlIMsg1Wlltj2Zw9gzSjSU"
+    api_key = os.getenv("MAPS_API_KEY")
     query = "moving company"
     location = await get_lat_long(moving_query.location_from, api_key)
     if location is None:
@@ -48,6 +52,9 @@ async def get_moving_companies(moving_query: schemas.MovingQueryBase, db: Sessio
 
 # Function that takes moving companies and makes a phone call to each of them
 async def create_phone_call(moving_company_number, items, availability, from_location, to_location):
+    vapi_api = os.getenv("VAPI_API_KEY")
+    phone_id = os.getenv("VAPI_PHONE_ID")
+    
     data = {
         'assistant': {
             "firstMessage": "Hi! I'm calling for a quote on my move, is this a good time?",
@@ -75,13 +82,13 @@ async def create_phone_call(moving_company_number, items, availability, from_loc
             },
             "voice": "jennifer-playht"
         },
-        'phoneNumberId': 'cca68e63-6006-4a91-b7d1-4871159eb78f',
+        'phoneNumberId': {phone_id},
         'customer': {
-            'number': moving_company_number, # +14157698863
+            'number': {moving_company_number}, # +14157698863
         },
     }
     headers = {
-        'Authorization': 'Bearer 2838d84e-c155-4f78-a4ae-b82aa818f401',
+        'Authorization': f'Bearer {vapi_api}',
         'Content-Type': 'application/json'
     }
     
