@@ -2,72 +2,81 @@
 //  LoginScreen.swift
 //  RoboCallerMover
 //
-//  Created by Michelle Zheng  on 2/4/25.
+//  Created by Michelle Zheng on 2/25/25.
 //
 
 import SwiftUI
+import Foundation
+import Supabase
+import AuthenticationServices
+
+
 
 struct LoginScreen: View {
-    @EnvironmentObject var authManager: AuthManager
-    @State private var username: String = ""
+    @State private var email: String = ""
     @State private var password: String = ""
-    @State private var errorMessage: String? = nil
-
+    @State private var isLoading: Bool = false
+    @State private var result: Result<Void, Error>?
+    
     var body: some View {
-        VStack(spacing: 16) {
-//            Text("Account Login")
-//                .font(.largeTitle)
-//                .padding(.top, 80)
-            Image("movingLogo")
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity)
-                .frame(height: 500)
-                .cornerRadius(300)
-
-            TextField("Username", text: $username)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .autocapitalization(.none)
-
-            SecureField("Password", text: $password)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-
-            //error message
-            if let errorMessage = errorMessage {
-                Text(errorMessage)
-                    .foregroundColor(.red)
+        Form {
+            Section {
+                TextField("Email", text: $email)
+                    .textContentType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                
+                SecureField("Password", text: $password)
+                    .textContentType(.password)
+                    .autocorrectionDisabled()
             }
-
-            //button
-            Button(action: {
-                authManager.login(username: username, password: password) { success, error in
-                    if !success {
-                        errorMessage = error ?? "Login failed"
+            
+            Section {
+                Button("Sign in") {
+                    signInButtonTapped()
+                }
+                
+                if isLoading {
+                    ProgressView()
+                }
+            }
+            
+            // Show success or error
+            if let result {
+                Section {
+                    switch result {
+                    case .success:
+                        Text("Signed in successfully!")
+                    case .failure(let error):
+                        Text(error.localizedDescription)
+                            .foregroundColor(.red)
                     }
                 }
-            }) {
-                Text("Login")
-                    .foregroundColor(.black)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.yellow)
-                    .cornerRadius(8)
             }
-            
-            //push the image down
-            Spacer()
-            
-            
         }
-        .padding(.horizontal)
-        .background(Color.white) // optional if you want a solid background
-        .edgesIgnoringSafeArea(.top)
     }
-}
-
-struct LoginScreen_Previews: PreviewProvider {
-    static var previews: some View {
-        LoginScreen()
-            .environmentObject(AuthManager())
+    
+    func signInButtonTapped() {
+        Task {
+            isLoading = true
+            defer { isLoading = false }
+            do {
+                // Sign in with email/password
+                try await supabase.auth.signIn(email: email, password: password)
+                
+                result = .success(())
+            } catch {
+                result = .failure(error)
+            }
+        }
+    }
+    
+    
+    struct LoginScreen_Previews: PreviewProvider {
+        static var previews: some View {
+            NavigationStack {
+                LoginScreen()
+            }
+        }
     }
 }

@@ -6,14 +6,14 @@
 //
 
 import Foundation
-import CoreLocation //for use lat/long
+import CoreLocation
 
-struct Quote: Identifiable {
-    let id = UUID()
+struct Quote: Identifiable, Decodable {
+    var id = UUID() // Ensure this is unique
     let companyName: String
     let description: String
     let price: Double
     let iconName: String
-    let latitude: Double?   // optional if you have map coords
-    let longitude: Double?  // optional if you have map coords
+    let latitude: Double?
+    let longitude: Double?
 }

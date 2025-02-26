@@ -1,20 +1,27 @@
 //
 //  SearchFormView.swift
 //  roboCaller
-//  allows users to search for items
+//  Allows users to search for items
 //  Created by Michelle Zheng on 2/2/25.
-// 
-
+//
 
 import SwiftUI
+import Supabase
 
 struct SearchFormView: View {
+    // User inputs
     @State private var fromLocation: String = ""
     @State private var toLocation: String = ""
     @State private var selectedMoveSize: MoveSize = .small
     @State private var moveDescription: String = ""
     @State private var selectedDate: Date = Date()
-    @State private var selectedTime: Date = Date()
+    @State private var user_id: String = ""
+
+    // State
+    @State private var isLoading: Bool = false
+    @State private var errorMessage: String? = nil
+    @State private var successMessage: String? = nil
+    @State private var navigateToQuoteResults: Bool = false // For final navigation
 
     enum MoveSize: String, CaseIterable {
         case small = "Small (1–10 small items)"
@@ -23,74 +30,123 @@ struct SearchFormView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Search for quotes")
-                .font(.title2)
-                .padding(.top)
+        NavigationStack {
+            VStack(spacing: 16) {
+                Text("Search for a Move")
+                    .font(.title2)
+                    .padding(.top)
 
-            Group {
-                TextField("From", text: $fromLocation)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                TextField("To", text: $toLocation)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-            }
+                // "From" and "To" fields
+                Group {
+                    TextField("From", text: $fromLocation)
+                        .textFieldStyle(.roundedBorder)
+                    TextField("To", text: $toLocation)
+                        .textFieldStyle(.roundedBorder)
+                }
 
-            VStack(alignment: .leading) {
-                Text("Size of Move:")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-
+                // Move Size
                 Picker("Size of Move", selection: $selectedMoveSize) {
                     ForEach(MoveSize.allCases, id: \.self) { size in
-                        Text(size.rawValue).tag(size)
+                        Text(size.rawValue)
                     }
                 }
                 .pickerStyle(MenuPickerStyle())
-            }
 
-            VStack(alignment: .leading) {
-                Text("Describe your items to be moved (max 100 chars):")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-
+                // Move Description
                 TextEditor(text: $moveDescription)
-                    .frame(height: 200)
+                    .frame(height: 100)
                     .border(Color.gray.opacity(0.3))
-                    .onChange(of: moveDescription) { oldValue, newValue in
-                        if newValue.count > 100 {
-                            moveDescription = String(newValue.prefix(100))
-                        }
-                    }
-            }
 
-            HStack {
+                // Date
                 DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
                     .labelsHidden()
 
-                DatePicker("Select Time", selection: $selectedTime, displayedComponents: .hourAndMinute)
-                    .labelsHidden()
-            }
-
-            Spacer()
-
-            NavigationLink(destination: QuoteResultsView(
-                fromLocation: fromLocation,
-                toLocation: toLocation,
-                items: moveDescription,
-                availability: "\(selectedDate), \(selectedTime)",
-                quotes: [] // Pass actual quotes here
-            )) {
-                Text("Search")
+                // Loading indicator or Search button
+                if isLoading {
+                    ProgressView("Posting requests...")
+                } else {
+                    Button("Search") {
+                        performSearch()
+                    }
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Color.black)
                     .cornerRadius(8)
+                }
+
+                // Error
+                if let errorMessage = errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                }
+
+                // Success
+                if let successMessage = successMessage {
+                    Text(successMessage)
+                        .foregroundColor(.green)
+                }
+
+                Spacer()
             }
-            .padding(.bottom)
+            .padding()
+            // When both calls succeed, navigate to QuoteResultsView
+            .navigationDestination(isPresented: $navigateToQuoteResults) {
+                // A simple results page (or your real QuoteResultsView)
+                QuoteResultsView(
+                    fromLocation: fromLocation,
+                    toLocation: toLocation,
+                    items: moveDescription,
+                    availability: "\(selectedDate)",
+                    quotes: []
+                )
+            }
         }
-        .padding(.horizontal)
     }
+
+    private func performSearch() {
+        isLoading = true
+        errorMessage = nil
+        successMessage = nil
+
+        // Build the request body
+        let created_at = ISO8601DateFormatter().string(from: Date())
+        let items_details = selectedMoveSize.rawValue
+        let availability = "\(selectedDate)"
+        let inquiries: [Int] = []
+        let userID: String = "000"
+
+        // If you still need a user_id, derive from supabase.auth.session?.user?.id
+//        let userID = supabase.auth.session?.user?.id ?? ""
+//
+//        // 1) /get_moving_companies
+        let searchRequest = SearchRequest(
+            location_from: fromLocation,
+            location_to: toLocation,
+            created_at: created_at,
+//            items: moveDescription,
+//            items_details: items_details,
+            items: items_details,
+            items_details: moveDescription,
+            availability: availability,
+            user_id: userID,
+            inquiries: inquiries
+        )
+
+        APIManager.shared.getMovingCompanies(request: searchRequest) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let responseString):
+                    print("getMovingCompanies success => \(responseString)")
+                    // 2) Now call call_moving_companies
+                case .failure(let error):
+                    self.isLoading = false
+                    self.errorMessage = "Failed getMovingCompanies: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
 }
 
 struct SearchFormView_Previews: PreviewProvider {

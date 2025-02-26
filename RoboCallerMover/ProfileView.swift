@@ -1,96 +1,54 @@
+//
+//  ProfileView.swift
+//  RoboCallerMover
+//
+//  Created by Michelle Zheng on 2/25/25.
+//
+
 import SwiftUI
+import AuthenticationServices
+import Supabase
 
 struct ProfileView: View {
-  @State var username = ""
-  @State var fullName = ""
-  @State var website = ""
-
-  @State var isLoading = false
-
-  var body: some View {
-    NavigationStack {
-      Form {
-        Section {
-          TextField("Username", text: $username)
-            .textContentType(.username)
-            .textInputAutocapitalization(.never)
-          TextField("Full name", text: $fullName)
-            .textContentType(.name)
-          TextField("Website", text: $website)
-            .textContentType(.URL)
-            .textInputAutocapitalization(.never)
-        }
-
-        Section {
-          Button("Update profile") {
-            updateProfileButtonTapped()
-          }
-          .bold()
-
-          if isLoading {
-            ProgressView()
-          }
-        }
-      }
-      .navigationTitle("Profile")
-      .toolbar(content: {
-        ToolbarItem(placement: .topBarLeading){
-          Button("Sign out", role: .destructive) {
-            Task {
-              try? await supabase.auth.signOut()
+    let client = SupabaseClient(
+        supabaseURL: URL(string: "https://trhnmlvipaujtmtvagbs.supabase.co")!,
+        supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRyaG5tbHZpcGF1anRtdHZhZ2JzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwOTM0NzUsImV4cCI6MjA1NTY2OTQ3NX0.jRvPzrjGDnm7dTdXwUEVOKspvaR7NEHzqNYR_Shhqos"
+      )
+    var body: some View {
+      SignInWithAppleButton { request in
+        request.requestedScopes = [.email, .fullName]
+      } onCompletion: { result in
+        Task {
+          do {
+            guard let credential = try result.get().credential as? ASAuthorizationAppleIDCredential
+            else {
+              return
             }
+
+            guard let idToken = credential.identityToken
+              .flatMap({ String(data: $0, encoding: .utf8) })
+            else {
+              return
+            }
+              try await client.auth.signInWithIdToken(
+              credentials: .init(
+                provider: .apple,
+                idToken: idToken
+              )
+            )
+          } catch {
+            dump(error)
           }
         }
-      })
-    }
-    .task {
-      await getInitialProfile()
-    }
-  }
-
-  func getInitialProfile() async {
-    do {
-      let currentUser = try await supabase.auth.session.user
-
-      let profile: Profile =
-      try await supabase
-        .from("profiles")
-        .select()
-        .eq("id", value: currentUser.id)
-        .single()
-        .execute()
-        .value
-
-      self.username = profile.username ?? ""
-      self.fullName = profile.fullName ?? ""
-      self.website = profile.website ?? ""
-
-    } catch {
-      debugPrint(error)
-    }
-  }
-
-  func updateProfileButtonTapped() {
-    Task {
-      isLoading = true
-      defer { isLoading = false }
-      do {
-        let currentUser = try await supabase.auth.session.user
-
-        try await supabase
-          .from("profiles")
-          .update(
-            UpdateProfileParams(
-              username: username,
-              fullName: fullName,
-              website: website
-            )
-          )
-          .eq("id", value: currentUser.id)
-          .execute()
-      } catch {
-        debugPrint(error)
       }
+      .fixedSize()
     }
-  }
+}
+
+
+// MARK: - Preview
+struct ProfileView_Previews: PreviewProvider {
+    static var previews: some View {
+        ProfileView()
+    }
 }
