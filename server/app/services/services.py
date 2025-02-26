@@ -52,7 +52,7 @@ async def get_moving_companies(moving_query: schemas.MovingQuery, moving_query_i
             "phone_number": phone_number,
         }
         company_id = get_or_create_moving_company(company)
-        create_inquiry(moving_query_id, company_id)
+        create_inquiry(moving_query_id, phone_number, company_id)
 
         nearby_companies.append(company)
         

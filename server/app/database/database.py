@@ -67,9 +67,10 @@ def get_or_create_moving_company(company: dict) -> int:
 
     return company_id
 
-def create_inquiry(moving_query_id: int, company_id: int):
+def create_inquiry(moving_query_id: int, phone_number: str, company_id: int):
     inquiry_data = {
         "moving_query_id": moving_query_id,
+        "phone_number": phone_number,
         "moving_company_id": company_id,
         "price": -1,
         "phone_call_transcript": ""
