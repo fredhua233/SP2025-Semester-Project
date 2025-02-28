@@ -12,46 +12,32 @@ struct RootTabView: View {
     var body: some View {
         TabView {
             NavigationStack {
-                SearchFormView() // existing code
+                SearchFormView()
             }
             .tabItem {
                 Label("Search", systemImage: "magnifyingglass")
             }
 
             NavigationStack {
-                PastSearchesView() // existing code
+                PastSearchesView()
             }
             .tabItem {
                 Label("Past", systemImage: "clock")
             }
 
-            // New tab for "Account"
-//            NavigationStack {
-//                AccountView()
-//            }
-//            .tabItem {
-//                Label("Account", systemImage: "person")
-//            }
+            // 3rd tab for "Account"
+            NavigationStack {
+                AccountView() // Decides if user sees LoginScreen or ProfileView
+            }
+            .tabItem {
+                Label("Account", systemImage: "person")
+            }
         }
     }
 }
-
-//struct AccountView: View {
-//    var body: some View {
-//        // If session is available => show profile
-//        if let _ = supabase.auth.session {
-//            ProfileView()
-//        } else {
-//            // No session => show login
-//            LoginScreen()
-//        }
-//    }
-//}
 
 struct RootTabView_Previews: PreviewProvider {
     static var previews: some View {
         RootTabView()
     }
 }
-
-
