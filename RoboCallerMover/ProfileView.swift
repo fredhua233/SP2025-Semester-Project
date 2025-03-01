@@ -41,7 +41,6 @@ struct ProfileView: View {
                     Button("Sign out", role: .destructive) {
                         Task {
                             do {
-                                // If signOut is async/throws, do `try await`.
                                 try await supabase.auth.signOut()
                             } catch {
                                 errorMessage = "Sign-out error: \(error.localizedDescription)"
@@ -51,11 +50,9 @@ struct ProfileView: View {
                 }
             }
         }
-        // As soon as the view appears, fetch the existing profile
         .task {
             await fetchProfile()
         }
-        // Display errors in an alert
         .alert("Error", isPresented: Binding<Bool>(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -69,26 +66,22 @@ struct ProfileView: View {
     // MARK: - Fetch the user's current profile
     private func fetchProfile() async {
         do {
-            // 1) Get user session (async/throws in your supabase-swift)
             let session = try await supabase.auth.session
             let user = session.user
-
-            // 2) Convert the user ID to a string if your DB column is text
             let userID = user.id.uuidString
 
-            // 3) Select from "profiles" where "id" == userID
-            //    Then parse the result with `.value` instead of `.decoded()`
+            // Fetch profile from the `profiles` table
             let response = try await supabase
                 .from("profiles")
-                .eq(column: "id", value: userID)
-                .select("*")
+                .select()
+                .eq("user_id", value: userID) // Match the `user_id` in `profiles` with the current user's ID
                 .single()
                 .execute()
 
-            // `.value` is how older libs decode data (it doesn't throw)
-            let profile: Profile = response.value
+            // Decode the response into the Profile type
+            let profile: Profile = try JSONDecoder().decode(Profile.self, from: response.data)
 
-            // 4) Update local state
+            // Update state
             username = profile.username ?? ""
             fullName = profile.fullName ?? ""
             email    = profile.email ?? ""
@@ -116,21 +109,19 @@ struct ProfileView: View {
                 password: password
             )
 
-            // 1) Update the row, then .select("*") + .single() to get back the updated row
+            // Update profile in the `profiles` table
             let response = try await supabase
-              .from("profiles")
-              .filter("id", .eq, userID)
-              .update(params)
-              .select("*")
-              .single()
-              .execute()
+                .from("profiles")
+                .update(params)
+                .eq("user_id", value: userID) // Match the `user_id` in `profiles` with the current user's ID
+                .select()
+                .single()
+                .execute()
 
+            // Decode the response into the Profile type
+            let updatedProfile: Profile = try JSONDecoder().decode(Profile.self, from: response.data)
 
-
-            // 2) decode with `.value`
-            let updatedProfile: Profile = response.value
-
-            // 3) Reflect changes in UI
+            // Update state
             username = updatedProfile.username ?? ""
             fullName = updatedProfile.fullName ?? ""
             email    = updatedProfile.email ?? ""
