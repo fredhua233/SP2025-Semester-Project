@@ -9,99 +9,20 @@ import SwiftUI
 import Supabase
 
 struct LoginScreen: View {
+    @Binding var session: Session?
     @State private var email: String = ""
     @State private var password: String = ""
-
-    @State private var isLoading: Bool = false
-    @State private var result: Result<Void, Error>?
-
-    // For registration sheet
-    @State private var showRegisterSheet: Bool = false
-
-    var body: some View {
-        Form {
-            Section {
-                TextField("Email", text: $email)
-                    .textContentType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-
-                SecureField("Password", text: $password)
-                    .textContentType(.password)
-                    .autocorrectionDisabled()
-            }
-
-            Section {
-                Button("Sign in") {
-                    signInButtonTapped()
-                }
-                .disabled(isLoading)
-
-                if isLoading {
-                    ProgressView()
-                }
-
-                // "New user?" button
-                Button("Register New User") {
-                    showRegisterSheet = true
-                }
-            }
-
-            if let result {
-                Section {
-                    switch result {
-                    case .success:
-                        Text("Signed in successfully!")
-                    case .failure(let error):
-                        Text(error.localizedDescription)
-                            .foregroundColor(.red)
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showRegisterSheet) {
-            RegisterUserSheet(isPresented: $showRegisterSheet)
-        }
-    }
-
-    func signInButtonTapped() {
-        Task {
-            isLoading = true
-            defer { isLoading = false }
-            do {
-                // If older supabase-swift:
-                try await supabase.auth.signIn(email: email, password: password)
-
-                // If newer supabase-swift (0.6+):
-                // try await supabase.auth.signInWithPassword(
-                //   credentials: AuthCredentialsEmailPassword(email: email, password: password)
-                // )
-
-                result = .success(())
-            } catch {
-                result = .failure(error)
-            }
-        }
-    }
-}
-
-// MARK: - Registration Sheet
-struct RegisterUserSheet: View {
-    @Binding var isPresented: Bool
-
-    @State private var newEmail: String = ""
-    @State private var newPassword: String = ""
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Create New Account") {
-                    TextField("Email", text: $newEmail)
+                Section {
+                    TextField("Email", text: $email)
                         .textContentType(.emailAddress)
                         .autocapitalization(.none)
-                    SecureField("Password", text: $newPassword)
+                    SecureField("Password", text: $password)
                         .textContentType(.password)
                 }
 
@@ -113,49 +34,42 @@ struct RegisterUserSheet: View {
                 if isLoading {
                     ProgressView()
                 } else {
-                    Button("Register") {
-                        registerNewUser()
+                    Button("Sign In") {
+                        Task { await signIn() }
                     }
                 }
             }
-            .navigationTitle("Register")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        isPresented = false
-                    }
-                }
+            .navigationTitle("Login")
+            .navigationDestination(isPresented: Binding(get: { session != nil }, set: { _ in })) {
+                RootTabView(session: $session)
             }
         }
     }
 
-    func registerNewUser() {
-        Task {
-            isLoading = true
-            defer { isLoading = false }
+    private func signIn() async {
+        isLoading = true
+        errorMessage = nil
 
-            do {
-                // If older supabase-swift:
-                try await supabase.auth.signUp(email: newEmail, password: newPassword)
-
-                // If newer supabase-swift (0.6+):
-                // try await supabase.auth.signUp(
-                //   credentials: AuthCredentialsEmailPassword(email: newEmail, password: newPassword)
-                // )
-
-                // If success, dismiss sheet
-                isPresented = false
-            } catch {
-                errorMessage = error.localizedDescription
-            }
+        do {
+            let currentSession = try await supabase.auth.signIn(email: email, password: password)
+            session = currentSession
+        } catch {
+            errorMessage = "Login failed: \(error.localizedDescription)"
         }
+
+        isLoading = false
     }
 }
+
+
+
+
+
 
 struct LoginScreen_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
-            LoginScreen()
+            LoginScreen(session: .constant(nil)) // Provide a mock Binding<Session?>
         }
     }
 }

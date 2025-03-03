@@ -7,34 +7,45 @@
 
 import Foundation
 
-struct Profile: Decodable {
+struct Profile: Codable {
     let id: UUID?
-    let userID: String?
-    let username: String?
-    let fullName: String?
+    let user_id: UUID
+    let full_name: String?
     let email: String?
-    let password: String?
-
+    
     enum CodingKeys: String, CodingKey {
         case id
-        case userID = "user_id"
-        case username
-        case fullName = "full_name"
+        case user_id
+        case full_name
         case email
-        case password
     }
 }
 
 struct UpdateProfileParams: Encodable {
-    let username: String
-    let fullName: String
+    let full_name: String
     let email: String
-    let password: String
+}
+
+struct ProfileInsert: Codable {
+    let user_id: UUID
+    let email: String
+}
+
+struct MovingCompany: Identifiable, Codable {
+    let id: Int
+    let name: String
+    let phoneNumber: String
 
     enum CodingKeys: String, CodingKey {
-        case username
-        case fullName = "full_name"
-        case email
-        case password
+        case id
+        case name
+        case phoneNumber = "phone_number" // Match Supabase column
     }
 }
+
+
+
+
+
+
+

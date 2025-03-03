@@ -9,10 +9,11 @@ import SwiftUI
 import Supabase
 
 struct RootTabView: View {
+    @Binding var session: Session?
     var body: some View {
         TabView {
             NavigationStack {
-                SearchFormView()
+                SearchFormView(session: $session) 
             }
             .tabItem {
                 Label("Search", systemImage: "magnifyingglass")
@@ -25,9 +26,8 @@ struct RootTabView: View {
                 Label("Past", systemImage: "clock")
             }
 
-            // 3rd tab for "Account"
             NavigationStack {
-                AccountView() // Decides if user sees LoginScreen or ProfileView
+                AccountView(session: $session) 
             }
             .tabItem {
                 Label("Account", systemImage: "person")
@@ -38,6 +38,6 @@ struct RootTabView: View {
 
 struct RootTabView_Previews: PreviewProvider {
     static var previews: some View {
-        RootTabView()
+        RootTabView(session: .constant(nil))
     }
 }

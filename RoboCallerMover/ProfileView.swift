@@ -8,11 +8,11 @@
 import SwiftUI
 import Supabase
 
+
 struct ProfileView: View {
-    @State private var username = ""
+    @Binding var session: Session?
     @State private var fullName = ""
     @State private var email = ""
-    @State private var password = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
 
@@ -20,10 +20,8 @@ struct ProfileView: View {
         NavigationStack {
             Form {
                 Section("Profile") {
-                    TextField("Username", text: $username)
                     TextField("Full Name", text: $fullName)
                     TextField("Email", text: $email)
-                    SecureField("Password", text: $password)
                 }
                 Section {
                     if isLoading {
@@ -42,6 +40,7 @@ struct ProfileView: View {
                         Task {
                             do {
                                 try await supabase.auth.signOut()
+                                session = nil
                             } catch {
                                 errorMessage = "Sign-out error: \(error.localizedDescription)"
                             }
@@ -62,81 +61,154 @@ struct ProfileView: View {
             Text(errorMessage ?? "Unknown error")
         }
     }
-
-    // MARK: - Fetch the user's current profile
-    private func fetchProfile() async {
-        do {
-            let session = try await supabase.auth.session
-            let user = session.user
-            let userID = user.id.uuidString
-
-            // Fetch profile from the `profiles` table
-            let response = try await supabase
-                .from("profiles")
-                .select()
-                .eq("user_id", value: userID) // Match the `user_id` in `profiles` with the current user's ID
-                .single()
-                .execute()
-
-            // Decode the response into the Profile type
-            let profile: Profile = try JSONDecoder().decode(Profile.self, from: response.data)
-
-            // Update state
-            username = profile.username ?? ""
-            fullName = profile.fullName ?? ""
-            email    = profile.email ?? ""
-            password = profile.password ?? ""
-
-        } catch {
-            errorMessage = "Error fetching profile: \(error.localizedDescription)"
-        }
-    }
-
-    // MARK: - Update the user's profile
+    
+    // MARK: - Profile Updating
     private func updateProfile() async {
         do {
             isLoading = true
             defer { isLoading = false }
 
-            let session = try await supabase.auth.session
-            let user = session.user
-            let userID = user.id.uuidString
+            guard let session = session else {
+                throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "No active session"])
+            }
+
+            let userID = session.user.id
 
             let params = UpdateProfileParams(
-                username: username,
-                fullName: fullName,
-                email: email,
-                password: password
+                full_name: fullName,
+                email: email
             )
 
-            // Update profile in the `profiles` table
             let response = try await supabase
                 .from("profiles")
                 .update(params)
-                .eq("user_id", value: userID) // Match the `user_id` in `profiles` with the current user's ID
+                .eq("user_id", value: userID)
                 .select()
                 .single()
                 .execute()
 
-            // Decode the response into the Profile type
             let updatedProfile: Profile = try JSONDecoder().decode(Profile.self, from: response.data)
+            await MainActor.run {
+                fullName = updatedProfile.full_name ?? ""
+                email = updatedProfile.email ?? ""
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "Update failed: \(error.localizedDescription)"
+            }
+        }
+    }
 
-            // Update state
-            username = updatedProfile.username ?? ""
-            fullName = updatedProfile.fullName ?? ""
-            email    = updatedProfile.email ?? ""
-            password = updatedProfile.password ?? ""
 
-            print("Profile updated to username: \(updatedProfile.username ?? "nil")")
+    // MARK: - Profile Fetching
+    private func fetchProfile() async {
+        do {
+            guard let session = session else {
+                throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "No active session"])
+            }
+
+            let userID = session.user.id
+
+            print("Fetching profile for user ID:", userID)
+
+            // Fetch all rows matching the user_id
+            let response = try await supabase
+                .from("profiles")
+                .select()
+                .eq("user_id", value: userID)
+                .execute()
+
+            print("Profile query response:", response)
+
+            // Check if there are multiple or zero rows returned
+            let jsonData = response.data
+
+            if jsonData.isEmpty {
+                print("No profile found for user:", userID)
+                
+                // Create a new profile
+                try await createNewProfile(userID: userID, email: session.user.email ?? "")
+                
+                return
+            }
+
+            // Decode profile safely
+            let profiles = try JSONDecoder().decode([Profile].self, from: jsonData)
+
+            if profiles.count > 1 {
+                print("Multiple profiles found for user! This should not happen.")
+                throw NSError(domain: "Database", code: 500, userInfo: [NSLocalizedDescriptionKey: "Multiple profiles found for the same user."])
+            }
+
+            if let profile = profiles.first {
+                print("Profile found:", profile)
+                await MainActor.run {
+                    fullName = profile.full_name ?? ""
+                    email = profile.email ?? ""
+                }
+            }
 
         } catch {
-            errorMessage = "Error updating profile: \(error.localizedDescription)"
+            print("Profile error:", error)
+            await MainActor.run {
+                errorMessage = """
+                Profile error: \(error.localizedDescription)
+                
+                Debugging steps:
+                1. Check if a profile exists for your user_id
+                2. Ensure profiles table has unique user_id values
+                3. If needed, create a profile manually
+                """
+            }
+        }
+    }
+    
+    // MARK: - create new profiles
+    private func createNewProfile(userID: UUID, email: String) async throws {
+        print("🆕 Creating new profile for user:", userID)
+
+        let newProfile = ProfileInsert(
+            user_id: userID,
+            email: email
+        )
+
+        try await supabase
+            .from("profiles")
+            .insert(newProfile)
+            .execute()
+
+        print("✅ Profile successfully created for user:", userID)
+
+        await MainActor.run {
+            fullName = ""
+            self.email = email
+        }
+    }
+
+    
+
+
+    // MARK: - Error Handling
+    private func handleProfileError(_ error: Error) async {
+        let nsError = error as NSError
+        var message = "Profile error: \(error.localizedDescription)"
+        
+        if nsError.domain == "PostgRESTError" {
+            message = """
+            Database error. Please check:
+            1. Internet connection
+            2. Profile table permissions
+            """
+        }
+        
+        await MainActor.run {
+            errorMessage = message
         }
     }
 }
 
 struct ProfileView_Previews: PreviewProvider {
     static var previews: some View {
-        ProfileView()
+        ProfileView(session: .constant(nil))
     }
 }
