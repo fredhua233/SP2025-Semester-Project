@@ -16,7 +16,9 @@ struct SearchFormView: View {
     @State private var moveDescription: String = ""
     @State private var selectedDate: Date = Date()
     @State private var userID: String = ""
-    @State private var movingCompanies: [MovingCompany] = []
+    @State private var movingCompanyIDs: [Int] = []
+    @State private var movingInquiryIDS: [Int] = []
+    @State private var movingQuery: Int = 0
     
     // Navigation
     @State private var navigateToQuoteResults: Bool = false
@@ -86,7 +88,10 @@ struct SearchFormView: View {
                     toLocation: toLocation,
                     items: moveDescription,
                     availability: "\(selectedDate)",
-                    movingCompanies: movingCompanies
+                    movingQueryID: movingQuery,
+                    movingCompanyIDs: movingCompanyIDs,
+                    movingInquiryIDS: movingInquiryIDS
+                    
                 )
             }
         }
@@ -132,14 +137,17 @@ struct SearchFormView: View {
             }
 
             print("API Response: \(responseString)")
+            let responseData = Data(responseString.utf8)
+            let jsonResponse = try JSONSerialization.jsonObject(with: responseData, options: []) as? [String: Any]
+            guard let movingQueryID = jsonResponse?["moving_query_id"] as? Int else {
+                throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response from server"])
+            }
+            movingQuery = movingQueryID
 
-            // Fetch moving company IDs from Supabase
-            let movingCompanyIDs = try await fetchMovingCompanyIDs(for: userID)
+            movingCompanyIDs = try await fetchMovingCompanyIDs(for: movingQueryID)
             print("🔍 Found Moving Company IDs: \(movingCompanyIDs)")
-
-            // Fetch moving company details
-            movingCompanies = try await fetchMovingCompanyDetails(for: movingCompanyIDs)
-
+            movingInquiryIDS = try await fetchMovingInquiryIDs(for: movingQueryID)
+            print("🔍 Found Moving Inquiry IDs: \(movingInquiryIDS)")
             navigateToQuoteResults = true
         } catch {
             errorMessage = "Search failed: \(error.localizedDescription)"
@@ -149,17 +157,29 @@ struct SearchFormView: View {
     }
 
     // MARK: - Fetch Moving Company IDs from Supabase
-    private func fetchMovingCompanyIDs(for userID: String) async throws -> [Int] {
+    private func fetchMovingCompanyIDs(for movingQueryID: Int) async throws -> [Int] {
         let response = try await supabase
             .from("moving_inquiry")
             .select("moving_company_id")
-            .eq("id", value: userID)
+            .eq("moving_query_id", value: movingQueryID)
             .execute()
 
         let jsonData = response.data
 
         let inquiryIDs = try JSONDecoder().decode([[String: Int]].self, from: jsonData)
         return inquiryIDs.compactMap { $0["moving_company_id"] }
+    }
+    private func fetchMovingInquiryIDs(for movingQueryID: Int) async throws -> [Int] {
+        let response = try await supabase
+            .from("moving_inquiry")
+            .select("id")
+            .eq("moving_query_id", value: movingQueryID)
+            .execute()
+
+        let jsonData = response.data
+
+        let inquiryIDs = try JSONDecoder().decode([[String: Int]].self, from: jsonData)
+        return inquiryIDs.compactMap { $0["id"] }
     }
 
     // MARK: - Fetch Moving Company Details from Supabase
@@ -173,6 +193,8 @@ struct SearchFormView: View {
         let jsonData = response.data
         return try JSONDecoder().decode([MovingCompany].self, from: jsonData)
     }
+
+
 }
 
 struct SearchFormView_Previews: PreviewProvider {

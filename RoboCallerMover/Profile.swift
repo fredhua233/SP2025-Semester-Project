@@ -29,7 +29,6 @@ struct UpdateProfileParams: Encodable {
 struct ProfileInsert: Codable {
     let user_id: UUID
     let email: String
-    let full_name: String // Add this
 }
 
 struct MovingCompany: Identifiable, Codable {
@@ -44,7 +43,22 @@ struct MovingCompany: Identifiable, Codable {
     }
 }
 
-
+struct MovingInquiry: Identifiable, Codable {
+    let id: Int
+    let moving_company_id: Int
+    let price: Double
+    let phone_number: String
+    let phone_call_transcript: String
+    let in_progress: Bool
+    enum CodingKeys: String, CodingKey {
+        case id
+        case moving_company_id
+        case price
+        case phone_number
+        case phone_call_transcript
+        case in_progress
+    }
+}
 
 
 
