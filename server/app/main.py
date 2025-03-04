@@ -47,7 +47,7 @@ async def call_moving_companies(moving_company_number: str, moving_company_id: i
         to_location=location_to
     )
 @app.post("/vapi_webhook_report/")
-def vapi_webhook_report(json_data):
+def vapi_webhook_report(json_data: dict):
     if json_data.get("message", {}).get("type") == "end-of-call-report":
         # Extract the required fields
         vapi_id = json_data["message"]["call"]["id"]
