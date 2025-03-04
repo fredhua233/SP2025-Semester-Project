@@ -56,17 +56,7 @@ async def get_moving_companies(moving_query: schemas.MovingQuery, moving_query_i
 
         nearby_companies.append(company)
 
-        hardcoded_company = {
-        "name": "Fred Hua",
-        "address": "123 Example St, Example City, EX 12345",
-        "rating": 4.5,
-        "user_ratings_total": 100,
-        "latitude": 40.7128,  # Example latitude
-        "longitude": -74.0060,  # Example longitude
-        "phone_number": "+14157698863",
-    }
-    company_id = get_or_create_moving_company(hardcoded_company)
-    create_inquiry(moving_query_id, hardcoded_company["phone_number"], company_id)
+
 
 # Function that takes moving companies and makes a phone call to each of them
 async def create_phone_call(moving_query_id, moving_company_id, moving_company_number, items, availability, from_location, to_location):
