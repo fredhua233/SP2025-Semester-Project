@@ -21,9 +21,33 @@
 		3D593D5F2D52C81700EA7E90 /* RoboCallerMover.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoboCallerMover.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3DCDE8832D77A3D70085B612 /* Exceptions for "RoboCallerMover" folder in "RoboCallerMover" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				HashHelper.swift,
+			);
+			target = 3D593D5E2D52C81700EA7E90 /* RoboCallerMover */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		3DCDE8842D77A3D70085B612 /* Exceptions for "RoboCallerMover" folder in "Copy Bundle Resources" phase from "RoboCallerMover" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = 3D593D5D2D52C81700EA7E90 /* Resources */;
+			membershipExceptions = (
+				HashHelper.swift,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3D593D612D52C81700EA7E90 /* RoboCallerMover */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3DCDE8832D77A3D70085B612 /* Exceptions for "RoboCallerMover" folder in "RoboCallerMover" target */,
+				3DCDE8842D77A3D70085B612 /* Exceptions for "RoboCallerMover" folder in "Copy Bundle Resources" phase from "RoboCallerMover" target */,
+			);
 			path = RoboCallerMover;
 			sourceTree = "<group>";
 		};

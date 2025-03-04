@@ -1,19 +1,20 @@
-//
+
 //  RootTabView.swift
 //  RoboCallerMover
 //
 //  Created by Michelle Zheng on 2/25/25.
-//
+
 
 import SwiftUI
 import Supabase
 
 struct RootTabView: View {
     @Binding var session: Session?
+
     var body: some View {
         TabView {
             NavigationStack {
-                SearchFormView(session: $session) 
+                SearchFormView(session: $session)
             }
             .tabItem {
                 Label("Search", systemImage: "magnifyingglass")
@@ -27,11 +28,18 @@ struct RootTabView: View {
             }
 
             NavigationStack {
-                AccountView(session: $session) 
+                if session != nil {
+                    ProfileView(session: $session)
+                } else {
+                    LoginScreen(session: $session)
+                }
             }
             .tabItem {
                 Label("Account", systemImage: "person")
             }
+        }
+        .onAppear {
+            print("RootTabView appeared - session: \(String(describing: session?.user.id))")
         }
     }
 }

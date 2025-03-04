@@ -7,13 +7,21 @@
 
 import SwiftUI
 import Supabase
+import CryptoKit
 
 struct ProfileView: View {
     @Binding var session: Session?
     @State private var fullName = ""
     @State private var email = ""
+    @State private var currentSecurityAnswer = ""
+    @State private var newSecurityQuestion = ""
+    @State private var newSecurityAnswer = ""
+    @State private var newPassword = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
+    
+    // Session expiration buffer (matches AccountView)
+    private let sessionExpirationBuffer: TimeInterval = 300
 
     var body: some View {
         NavigationStack {
@@ -21,15 +29,43 @@ struct ProfileView: View {
                 Section("Profile") {
                     TextField("Full Name", text: $fullName)
                     TextField("Email", text: $email)
+                        .textContentType(.emailAddress)
+                        .autocapitalization(.none)
+                        .disabled(true)
                 }
+
+                Section("Security Settings") {
+                    SecureField("Current Security Answer", text: $currentSecurityAnswer)
+                        .textContentType(.password)
+                    
+                    Picker("New Security Question", selection: $newSecurityQuestion) {
+                        Text("Select a question").tag("")
+                        ForEach(SecurityQuestion.allCases) { question in
+                            Text(question.rawValue).tag(question.rawValue)
+                        }
+                    }
+                    
+                    SecureField("New Security Answer", text: $newSecurityAnswer)
+                        .textContentType(.newPassword)
+                    
+                    SecureField("New Password", text: $newPassword)
+                        .textContentType(.newPassword)
+                }
+
                 Section {
                     if isLoading {
                         ProgressView()
                     } else {
-                        Button("Update Profile") {
-                            Task { await updateProfile() }
+                        Button("Update Settings") {
+                            Task { await updateSecuritySettings() }
                         }
+                        .disabled(updateButtonDisabled)
                     }
+                }
+
+                if let errorMessage = errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
                 }
             }
             .navigationTitle("Profile")
@@ -41,84 +77,130 @@ struct ProfileView: View {
                                 try await supabase.auth.signOut()
                                 session = nil
                             } catch {
-                                errorMessage = "Sign-out error: \(error.localizedDescription)"
+                                handleError(error)
                             }
                         }
                     }
                 }
             }
-        }
-        .task {
-            await fetchProfile()
-        }
-        .alert("Error", isPresented: Binding<Bool>(
-            get: { errorMessage != nil },
-            set: { if !$0 { errorMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(errorMessage ?? "Unknown error")
+            .task {
+                await loadProfile()
+            }
+            .alert("Error", isPresented: Binding<Bool>(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(errorMessage ?? "Unknown error")
+            }
         }
     }
     
-    // MARK: - Profile Updating
-    private func updateProfile() async {
+    // MARK: - Update Logic
+    private var updateButtonDisabled: Bool {
+        currentSecurityAnswer.isEmpty &&
+        newSecurityQuestion.isEmpty &&
+        newSecurityAnswer.isEmpty &&
+        newPassword.isEmpty
+    }
+    
+    private func updateSecuritySettings() async {
+        guard let userId = session?.user.id else {
+            handleError(NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "No active session"]))
+            return
+        }
+        
+        isLoading = true
+        defer { isLoading = false }
+        
         do {
-            isLoading = true
-            defer { isLoading = false }
+            try await checkSessionExpiration()
 
-            guard let session = session else {
-                throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "No active session"])
+            var updateData: [String: String] = [:]
+            
+            // Only include non-empty fields
+            if !fullName.isEmpty { updateData["full_name"] = fullName }
+            if !newSecurityQuestion.isEmpty { updateData["security_question"] = newSecurityQuestion }
+            if !newSecurityAnswer.isEmpty { updateData["security_answer_hash"] = newSecurityAnswer.sha256WithStretching() }
+            
+            // If there's nothing to update, return early
+            guard !updateData.isEmpty else {
+                errorMessage = "No changes to update."
+                return
             }
-
-            let params = UpdateProfileParams(
-                full_name: fullName,
-                email: email
-            )
-
-            let response = try await supabase
+            
+            try await supabase
                 .from("profiles")
-                .update(params)
-                .eq("user_id", value: session.user.id)
-                .select()
-                .single()
+                .update(updateData)
+                .eq("user_id", value: userId)
                 .execute()
 
-            let updatedProfile: Profile = try JSONDecoder().decode(Profile.self, from: response.data)
             await MainActor.run {
-                fullName = updatedProfile.full_name ?? "No name provided"
-                email = updatedProfile.email!
+                errorMessage = "Settings updated successfully!"
+                resetFields()
+                Task { await loadProfile() } // Reload profile to reflect changes
             }
         } catch {
-            await MainActor.run {
-                errorMessage = "Update failed: \(error.localizedDescription)"
-            }
+            handleError(error)
         }
     }
 
-    // MARK: - Profile Fetching
-    private func fetchProfile() async {
+    
+    // MARK: - Helper Methods
+    private func loadProfile() async {
+        guard let userId = session?.user.id else { return }
+
         do {
-            guard let session = session else { return }
-            
             let response = try await supabase
                 .from("profiles")
                 .select()
-                .eq("user_id", value: session.user.id)
-                .single()
+                .eq("user_id", value: userId)
+                .limit(1) // Prevent multiple rows issue
                 .execute()
 
-            let profile: Profile = try JSONDecoder().decode(Profile.self, from: response.data)
-            
-            await MainActor.run {
-                fullName = profile.full_name ?? "" // Handle optional
-                email = profile.email ?? "" // Handle optional
+            // Check if response data is empty
+            guard !response.data.isEmpty else {
+                print("No profile found for user \(userId)")
+                return
             }
-            
+
+            // Decode JSON array to get first profile
+            let profile = try JSONDecoder().decode([Profile].self, from: response.data).first
+
+            await MainActor.run {
+                fullName = profile?.full_name ?? ""
+                email = profile?.email ?? ""
+                newSecurityQuestion = profile?.security_question ?? ""
+            }
+
         } catch {
-            await MainActor.run {
-                errorMessage = "Profile error: \(error.localizedDescription)"
-            }
+            handleError(error)
+        }
+    }
+
+
+    
+    private func resetFields() {
+        currentSecurityAnswer = ""
+        newSecurityAnswer = ""
+        newPassword = ""
+    }
+    
+    private func checkSessionExpiration() async throws {
+        guard let session = session else { return }
+        
+        let expirationWithBuffer = Date(timeIntervalSince1970: session.expiresAt - sessionExpirationBuffer)
+        if Date() > expirationWithBuffer {
+            let refreshedSession = try await supabase.auth.refreshSession()
+            self.session = refreshedSession
+        }
+    }
+    
+    private func handleError(_ error: Error) {
+        Task { @MainActor in
+            errorMessage = error.localizedDescription
+            print("Profile Error: \(error)")
         }
     }
 }
@@ -128,3 +210,25 @@ struct ProfileView_Previews: PreviewProvider {
         ProfileView(session: .constant(nil))
     }
 }
+
+extension ClientManager {
+    func updateSecuritySettings(userId: UUID, question: String?, answer: String?) async throws {
+        var updates: [String: String] = [:]
+        
+        if let question = question {
+            updates["security_question"] = question
+        }
+        if let answer = answer {
+            updates["security_answer_hash"] = answer.sha256WithStretching()
+        }
+        
+        try await adminClient
+            .from("profiles")
+            .update(updates)
+            .eq("user_id", value: userId)
+            .execute()
+    }
+}
+
+
+

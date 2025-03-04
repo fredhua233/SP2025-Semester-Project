@@ -1,3 +1,10 @@
+//
+//  QuoteResultsView.swift
+//  RoboCallerMover
+//
+//  Created by Michelle Zheng  on 2/24/25.
+//
+
 import SwiftUI
 import Supabase
 
