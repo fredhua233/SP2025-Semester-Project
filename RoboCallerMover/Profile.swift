@@ -29,6 +29,7 @@ struct UpdateProfileParams: Encodable {
 struct ProfileInsert: Codable {
     let user_id: UUID
     let email: String
+    let full_name: String // Add this
 }
 
 struct MovingCompany: Identifiable, Codable {

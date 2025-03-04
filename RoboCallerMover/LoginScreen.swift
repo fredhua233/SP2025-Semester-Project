@@ -8,12 +8,14 @@
 import SwiftUI
 import Supabase
 
+
 struct LoginScreen: View {
     @Binding var session: Session?
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
+    @State private var showingRegisterSheet = false
 
     var body: some View {
         NavigationStack {
@@ -31,15 +33,24 @@ struct LoginScreen: View {
                         .foregroundColor(.red)
                 }
 
-                if isLoading {
-                    ProgressView()
-                } else {
-                    Button("Sign In") {
-                        Task { await signIn() }
+                Section {
+                    if isLoading {
+                        ProgressView()
+                    } else {
+                        Button("Sign In") {
+                            Task { await signIn() }
+                        }
+                        
+                        Button("Create Account") {
+                            showingRegisterSheet.toggle()
+                        }
                     }
                 }
             }
             .navigationTitle("Login")
+            .sheet(isPresented: $showingRegisterSheet) {
+                RegisterUserSheet(isPresented: $showingRegisterSheet, session: $session)
+            }
             .navigationDestination(isPresented: Binding(get: { session != nil }, set: { _ in })) {
                 RootTabView(session: $session)
             }
@@ -60,11 +71,6 @@ struct LoginScreen: View {
         isLoading = false
     }
 }
-
-
-
-
-
 
 struct LoginScreen_Previews: PreviewProvider {
     static var previews: some View {

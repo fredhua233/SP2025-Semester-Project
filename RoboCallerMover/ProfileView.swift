@@ -8,7 +8,6 @@
 import SwiftUI
 import Supabase
 
-
 struct ProfileView: View {
     @Binding var session: Session?
     @State private var fullName = ""
@@ -72,8 +71,6 @@ struct ProfileView: View {
                 throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "No active session"])
             }
 
-            let userID = session.user.id
-
             let params = UpdateProfileParams(
                 full_name: fullName,
                 email: email
@@ -82,15 +79,15 @@ struct ProfileView: View {
             let response = try await supabase
                 .from("profiles")
                 .update(params)
-                .eq("user_id", value: userID)
+                .eq("user_id", value: session.user.id)
                 .select()
                 .single()
                 .execute()
 
             let updatedProfile: Profile = try JSONDecoder().decode(Profile.self, from: response.data)
             await MainActor.run {
-                fullName = updatedProfile.full_name ?? ""
-                email = updatedProfile.email ?? ""
+                fullName = updatedProfile.full_name ?? "No name provided"
+                email = updatedProfile.email!
             }
         } catch {
             await MainActor.run {
@@ -99,110 +96,29 @@ struct ProfileView: View {
         }
     }
 
-
     // MARK: - Profile Fetching
     private func fetchProfile() async {
         do {
-            guard let session = session else {
-                throw NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "No active session"])
-            }
-
-            let userID = session.user.id
-
-            print("Fetching profile for user ID:", userID)
-
-            // Fetch all rows matching the user_id
+            guard let session = session else { return }
+            
             let response = try await supabase
                 .from("profiles")
                 .select()
-                .eq("user_id", value: userID)
+                .eq("user_id", value: session.user.id)
+                .single()
                 .execute()
 
-            print("Profile query response:", response)
-
-            // Check if there are multiple or zero rows returned
-            let jsonData = response.data
-
-            if jsonData.isEmpty {
-                print("No profile found for user:", userID)
-                
-                // Create a new profile
-                try await createNewProfile(userID: userID, email: session.user.email ?? "")
-                
-                return
-            }
-
-            // Decode profile safely
-            let profiles = try JSONDecoder().decode([Profile].self, from: jsonData)
-
-            if profiles.count > 1 {
-                print("Multiple profiles found for user! This should not happen.")
-                throw NSError(domain: "Database", code: 500, userInfo: [NSLocalizedDescriptionKey: "Multiple profiles found for the same user."])
-            }
-
-            if let profile = profiles.first {
-                print("Profile found:", profile)
-                await MainActor.run {
-                    fullName = profile.full_name ?? ""
-                    email = profile.email ?? ""
-                }
-            }
-
-        } catch {
-            print("Profile error:", error)
+            let profile: Profile = try JSONDecoder().decode(Profile.self, from: response.data)
+            
             await MainActor.run {
-                errorMessage = """
-                Profile error: \(error.localizedDescription)
-                
-                Debugging steps:
-                1. Check if a profile exists for your user_id
-                2. Ensure profiles table has unique user_id values
-                3. If needed, create a profile manually
-                """
+                fullName = profile.full_name ?? "" // Handle optional
+                email = profile.email ?? "" // Handle optional
             }
-        }
-    }
-    
-    // MARK: - create new profiles
-    private func createNewProfile(userID: UUID, email: String) async throws {
-        print("🆕 Creating new profile for user:", userID)
-
-        let newProfile = ProfileInsert(
-            user_id: userID,
-            email: email
-        )
-
-        try await supabase
-            .from("profiles")
-            .insert(newProfile)
-            .execute()
-
-        print("✅ Profile successfully created for user:", userID)
-
-        await MainActor.run {
-            fullName = ""
-            self.email = email
-        }
-    }
-
-    
-
-
-    // MARK: - Error Handling
-    private func handleProfileError(_ error: Error) async {
-        let nsError = error as NSError
-        var message = "Profile error: \(error.localizedDescription)"
-        
-        if nsError.domain == "PostgRESTError" {
-            message = """
-            Database error. Please check:
-            1. Internet connection
-            2. Profile table permissions
-            """
-        }
-        
-        await MainActor.run {
-            errorMessage = message
+            
+        } catch {
+            await MainActor.run {
+                errorMessage = "Profile error: \(error.localizedDescription)"
+            }
         }
     }
 }

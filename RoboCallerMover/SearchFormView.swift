@@ -153,7 +153,7 @@ struct SearchFormView: View {
         let response = try await supabase
             .from("moving_inquiry")
             .select("moving_company_id")
-            .eq("user_id", value: userID)
+            .eq("id", value: userID)
             .execute()
 
         let jsonData = response.data

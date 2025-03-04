@@ -11,17 +11,18 @@ import Supabase
 
 struct RegisterUserSheet: View {
     @Binding var isPresented: Bool
-    @Binding var session: Session? // Add this binding for session
-    
+    @Binding var session: Session?
     @State private var newEmail: String = ""
     @State private var newPassword: String = ""
+    @State private var fullName: String = ""
     @State private var isLoading: Bool = false
     @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Create New Account") {
+                Section("Create Account") {
+                    TextField("Full Name", text: $fullName)
                     TextField("Email", text: $newEmail)
                         .textContentType(.emailAddress)
                         .autocapitalization(.none)
@@ -34,12 +35,12 @@ struct RegisterUserSheet: View {
                         .foregroundColor(.red)
                 }
 
-                if isLoading {
-                    ProgressView()
-                } else {
-                    Button("Register") {
-                        Task(priority: .background) {
-                            await handleRegister()
+                Section {
+                    if isLoading {
+                        ProgressView()
+                    } else {
+                        Button("Register") {
+                            Task { await handleRegister() }
                         }
                     }
                 }
@@ -48,51 +49,45 @@ struct RegisterUserSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
-                        isPresented = false // Dismiss the sheet
+                        isPresented = false
                     }
                 }
             }
         }
     }
 
-    /// Async function to handle user registration
     private func handleRegister() async {
         do {
             let cleanEmail = newEmail.trimmingCharacters(in: .whitespaces)
             let cleanPassword = newPassword.trimmingCharacters(in: .whitespaces)
+            let cleanName = fullName.trimmingCharacters(in: .whitespaces)
 
-            // Debugging: Check if Supabase is accessible
-            print("Supabase client:", supabase)
-
-            // 1. Sign up the user
-            let result = try await supabase.auth.signUp(
+            // Registration logic remains the same
+            let authResponse = try await supabase.auth.signUp(
                 email: cleanEmail,
                 password: cleanPassword
             )
-            print("Sign up result:", result)
 
-            // 2. Retrieve the current session
-            let currentSession = try await supabase.auth.session
-            print("🔑 Current session:", currentSession)
-
-            // 3. Attempt profile creation as a fallback
+            let user = authResponse.user
+            
             let newProfile = ProfileInsert(
-                user_id: currentSession.user.id,
-                email: cleanEmail
+                user_id: user.id,
+                email: cleanEmail,
+                full_name: cleanName
             )
 
             try await supabase
                 .from("profiles")
-                .insert(newProfile) // Now we are passing a properly Encodable struct
+                .insert(newProfile)
                 .execute()
-            print("Profile inserted for user:", currentSession.user.id)
 
-            // 4. Update session state and dismiss the sheet
-            await MainActor.run {
-                self.session = currentSession
-                isPresented = false
+            if let currentSession = authResponse.session {
+                await MainActor.run {
+                    self.session = currentSession
+                    isPresented = false
+                }
             }
-
+            
         } catch {
             await MainActor.run {
                 errorMessage = "Registration failed: \(error.localizedDescription)"
@@ -100,4 +95,3 @@ struct RegisterUserSheet: View {
         }
     }
 }
-
