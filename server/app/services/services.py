@@ -62,7 +62,8 @@ async def get_moving_companies(moving_query: schemas.MovingQuery, moving_query_i
 async def create_phone_call(moving_query_id, moving_company_id, moving_company_number, items, availability, from_location, to_location):
     vapi_api = os.getenv("VAPI_API_KEY")
     phone_id = os.getenv("VAPI_PHONE_ID")
-    
+    if not moving_company_number.startswith('+'):
+        moving_company_number = '+' + moving_company_number
     data = {
         'assistant': {
             "firstMessage": "Hi! I'm calling for a quote on my move, is this a good time?",

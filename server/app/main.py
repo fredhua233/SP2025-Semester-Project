@@ -25,6 +25,11 @@ async def get_moving_companies(moving_query: schemas.MovingQuery, background_tas
 @app.post("/call_moving_companies/")
 async def call_moving_companies(moving_company_number: str, moving_company_id: int, moving_query_id: int):
     moving_query_data = get_moving_query(moving_query_id)
+    if isinstance(moving_query_data, list) and len(moving_query_data) > 0:
+        moving_query_data = moving_query_data[0]
+    else:
+        raise HTTPException(status_code=404, detail="Moving query not found")
+
     print(moving_query_data)
 
     items_details = moving_query_data["items_details"]
@@ -41,7 +46,6 @@ async def call_moving_companies(moving_company_number: str, moving_company_id: i
         from_location=location_from,
         to_location=location_to
     )
-
 @app.post("/vapi_webhook_report/")
 def vapi_webhook_report(json_data):
     if json_data.get("message", {}).get("type") == "end-of-call-report":

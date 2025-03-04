@@ -72,8 +72,7 @@ struct RegisterUserSheet: View {
             
             let newProfile = ProfileInsert(
                 user_id: user.id,
-                email: cleanEmail,
-                full_name: cleanName
+                email: cleanEmail
             )
 
             try await supabase
