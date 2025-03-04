@@ -100,7 +100,7 @@ def update_finished_call(vapi_id, structured_data_price, summary, transcript, du
         "phone_call_transcript": transcript,
         "summary": summary,
         "call_duration": duration_minutes
-    }).eq("vapi_call_id", vapi_id).execute()
+    }).eq("vapi_call_id", vapi_id).eq("phone_number", vapi_id).execute()
 
     if not response.data:
         print("Error updating finished call:", response.error)
