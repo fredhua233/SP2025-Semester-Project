@@ -85,8 +85,8 @@ def create_inquiry(moving_query_id: int, phone_number: str, company_id: int):
 
 def update_vapi_id(moving_query_id: str, phone_number: str, id: str):
     # Update the "id" field of the moving_inquiry table based on moving_query_id and phone_number
-    #response = supabase.table("moving_inquiry").update({"vapi_call_id": id}).eq("moving_query_id", moving_query_id).eq("phone_number", phone_number).execute()
-    response = supabase.table("moving_inquiry").update({"vapi_call_id": id}).eq("moving_query_id", moving_query_id).execute()
+    response = supabase.table("moving_inquiry").update({"vapi_call_id": id}).eq("moving_query_id", moving_query_id).eq("phone_number", phone_number).execute()
+    # response = supabase.table("moving_inquiry").update({"vapi_call_id": id}).eq("moving_query_id", moving_query_id).execute()
 
     if not response.data:
         print("Error updating inquiry id:", response.error)
