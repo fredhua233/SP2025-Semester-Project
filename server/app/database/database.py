@@ -81,3 +81,39 @@ def create_inquiry(moving_query_id: int, phone_number: str, company_id: int):
         print("Error inserting data:", response.error)
     else:
         print("Data inserted successfully:", response.data)
+
+def update_vapi_id(moving_query_id: str, phone_number: str, id: str):
+    # Update the "id" field of the moving_inquiry table based on moving_query_id and phone_number
+    #response = supabase.table("moving_inquiry").update({"vapi_call_id": id}).eq("moving_query_id", moving_query_id).eq("phone_number", phone_number).execute()
+    response = supabase.table("moving_inquiry").update({"vapi_call_id": id}).eq("moving_query_id", moving_query_id).execute()
+
+    if not response.data:
+        print("Error updating inquiry id:", response.error)
+    else:
+        print("Inquiry id updated successfully:", response.data)
+
+def update_finished_call(vapi_id, structured_data_price, summary, transcript, duration_minutes):
+    # Update the moving_inquiry table with the provided data based on vapi_id
+    response = supabase.table("moving_inquiry").update({
+        "price": structured_data_price,
+        "phone_call_transcript": transcript,
+        "summary": summary,
+        "call_duration": duration_minutes
+    }).eq("vapi_call_id", vapi_id).execute()
+
+    if not response.data:
+        print("Error updating finished call:", response.error)
+    else:
+        print("Finished call updated successfully:", response.data)
+
+def get_moving_query(moving_query_id: int):
+    response = supabase.table("moving_query").select(
+        "location_from", 
+        "location_to", 
+        "created_at", 
+        "items", 
+        "items_details", 
+        "availability", 
+        "user_id"
+    ).eq("id", moving_query_id).execute()
+    return response.data

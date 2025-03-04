@@ -5,7 +5,7 @@ import requests
 from app.utils import get_lat_long
 # from app.models import models
 from app.schemas import schemas
-from app.database.database import get_or_create_moving_company, create_inquiry
+from app.database.database import get_or_create_moving_company, create_inquiry, update_vapi_id
 import os
 from dotenv import load_dotenv
 
@@ -55,15 +55,11 @@ async def get_moving_companies(moving_query: schemas.MovingQuery, moving_query_i
         create_inquiry(moving_query_id, phone_number, company_id)
 
         nearby_companies.append(company)
-        
-
-    
-    return {"moving_companies": nearby_companies}
 
 
 
 # Function that takes moving companies and makes a phone call to each of them
-async def create_phone_call(moving_company_number, items, availability, from_location, to_location):
+async def create_phone_call(moving_query_id, moving_company_id, moving_company_number, items, availability, from_location, to_location):
     vapi_api = os.getenv("VAPI_API_KEY")
     phone_id = os.getenv("VAPI_PHONE_ID")
     
@@ -94,9 +90,9 @@ async def create_phone_call(moving_company_number, items, availability, from_loc
             },
             "voice": "jennifer-playht"
         },
-        'phoneNumberId': {phone_id},
+        'phoneNumberId': phone_id,
         'customer': {
-            'number': {moving_company_number}, # +14157698863
+            'number': moving_company_number, # +14157698863
         },
     }
     headers = {
@@ -108,12 +104,12 @@ async def create_phone_call(moving_company_number, items, availability, from_loc
 
     if response.status_code == 201:
         print('Call created successfully')
-        print(response.json())
+        print(response.json().get("id"))
+        update_vapi_id(moving_query_id, moving_company_number, response.json().get("id"))
         
     else:
         print('Failed to create call')
         print(response.text)
-    return {"message": "List of phone calls"}
 
 # Function to make calls using the moving query
 async def make_calls(moving_query: schemas.MovingQueryCreate, moving_companies: list):

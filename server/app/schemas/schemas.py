@@ -10,7 +10,7 @@ class MovingQuery(BaseModel):
     items_details: str
     availability: str
     user_id: str
-    inquiries: List[int]
+    # inquiries: List[str]
 
 class MovingInquiry(BaseModel):
     moving_company_id: int
