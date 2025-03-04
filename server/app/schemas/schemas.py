@@ -18,6 +18,7 @@ class MovingInquiry(BaseModel):
     price: float #-1 if not yet found or price once found
     phone_call_transcript: str
     moving_query_id: int
+    in_progress: bool
 
 class MovingCompany(BaseModel):
     name: str

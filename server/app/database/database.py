@@ -73,7 +73,8 @@ def create_inquiry(moving_query_id: int, phone_number: str, company_id: int):
         "phone_number": phone_number,
         "moving_company_id": company_id,
         "price": -1,
-        "phone_call_transcript": ""
+        "phone_call_transcript": "",
+        "in_progress": False
     }
 
     response = supabase.table("moving_inquiry").insert(inquiry_data).execute()
