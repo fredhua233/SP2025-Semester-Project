@@ -222,7 +222,10 @@ struct QuoteResultsView: View {
                 .select("*")
                 .in("id", values: movingInquiryIDS)
                 .execute()
-
+                        // Print the raw response data for debugging
+            if let responseData = String(data: response.data, encoding: .utf8) {
+                print("Raw response data: \(responseData)")
+            }
             let inquiries = try JSONDecoder().decode([MovingInquiry].self, from: response.data)
             await MainActor.run {
                 movingInquiries = inquiries

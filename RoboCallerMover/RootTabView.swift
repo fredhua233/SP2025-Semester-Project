@@ -20,7 +20,7 @@ struct RootTabView: View {
             }
 
             NavigationStack {
-                PastSearchesView()
+                PastSearchesView(session: $session)
             }
             .tabItem {
                 Label("Past", systemImage: "clock")
