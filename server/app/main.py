@@ -55,14 +55,16 @@ def vapi_webhook_report(json_data: dict):
         summary = json_data["message"]["analysis"]["summary"]
         transcript = json_data["message"]["transcript"]
         duration_minutes = json_data["message"]["durationMinutes"]
+        phone_number = json_data["message"]["customer"]["number"]
 
         print(f"VAPI ID: {vapi_id}")
         print(f"Structured Data Price: {structured_data_price}")
         print(f"Summary: {summary}")
         print(f"Transcript: {transcript}")
         print(f"Duration Minutes: {duration_minutes}")
+        print(f"Phone Number: {phone_number}")
         
-        update_finished_call(vapi_id, structured_data_price, summary, transcript, duration_minutes)
+        update_finished_call(vapi_id, phone_number, structured_data_price, summary, transcript, duration_minutes)
         
     else:
         return None

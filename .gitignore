@@ -4,3 +4,5 @@
 .DS_Store
 /RoboCallerMover.xcodeproj/*
 RoboCallerMover.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+__pycache__/
+*.pyc
