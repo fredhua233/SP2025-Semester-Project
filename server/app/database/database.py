@@ -103,7 +103,7 @@ def update_finished_call(vapi_id, phone_number, structured_data_price, summary, 
     }).eq("vapi_call_id", vapi_id).eq("phone_number", phone_number).execute()
 
     if not response.data:
-        print("Error updating finished call:", response.error)
+        print("Error updating finished call")
     else:
         print("Finished call updated successfully:", response.data)
 
