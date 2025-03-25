@@ -93,17 +93,17 @@ def update_vapi_id(moving_query_id: str, phone_number: str, id: str):
     else:
         print("Inquiry id updated successfully:", response.data)
 
-def update_finished_call(vapi_id, structured_data_price, summary, transcript, duration_minutes):
+def update_finished_call(vapi_id, phone_number, structured_data_price, summary, transcript, duration_minutes):
     # Update the moving_inquiry table with the provided data based on vapi_id
     response = supabase.table("moving_inquiry").update({
         "price": structured_data_price,
         "phone_call_transcript": transcript,
         "summary": summary,
         "call_duration": duration_minutes
-    }).eq("vapi_call_id", vapi_id).eq("phone_number", vapi_id).execute()
+    }).eq("vapi_call_id", vapi_id).eq("phone_number", phone_number).execute()
 
     if not response.data:
-        print("Error updating finished call:", response.error)
+        print("Error updating finished call")
     else:
         print("Finished call updated successfully:", response.data)
 
