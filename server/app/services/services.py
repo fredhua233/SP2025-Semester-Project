@@ -72,6 +72,7 @@ async def get_moving_companies(moving_query: schemas.MovingQuery, moving_query_i
 
 # Function that takes moving companies and makes a phone call to each of them
 async def create_phone_call(moving_query_id, moving_company_id, moving_company_number, items, availability, from_location, to_location):
+    moving_company_number = f"+{moving_company_number.lstrip('+').replace(' ', '')}"
     vapi_api = os.getenv("VAPI_API_KEY")
     phone_id = os.getenv("VAPI_PHONE_ID")
     
