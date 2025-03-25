@@ -1,20 +1,19 @@
 from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
-from sqlalchemy.orm import Session
 from app.schemas import schemas
 # from app.crud import crud
 from app.services import services
-from app.database.database import add_moving_query
+from app.database.database import add_moving_query, update_finished_call, get_moving_query
 
 
 app = FastAPI()
 
 # Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
 
 @app.post("/get_moving_companies/")
 async def get_moving_companies(moving_query: schemas.MovingQuery, background_tasks: BackgroundTasks):
@@ -24,64 +23,48 @@ async def get_moving_companies(moving_query: schemas.MovingQuery, background_tas
     return {"moving_query_id": moving_query_id}
 
 @app.post("/call_moving_companies/")
-async def call_moving_companies(moving_query: schemas.MovingQuery, moving_company_number: str, db: Session = Depends(get_db)):
-    return await services.create_phone_call(moving_company_number=moving_company_number, items=moving_query.items, availability=moving_query.availability, from_location=moving_query.location_from, to_location=moving_query.location_to)
-
-#===============================================================================
-# MovingQuery routes
-
-@app.get("/moving_queries/{query_id}", response_model=schemas.MovingQuery)
-def read_moving_query(query_id: int, db: Session = Depends(get_db)):
-    db_moving_query = crud.get_moving_query(db, query_id=query_id)
-    if db_moving_query is None:
+async def call_moving_companies(moving_company_number: str, moving_company_id: int, moving_query_id: int):
+    moving_query_data = get_moving_query(moving_query_id)
+    if isinstance(moving_query_data, list) and len(moving_query_data) > 0:
+        moving_query_data = moving_query_data[0]
+    else:
         raise HTTPException(status_code=404, detail="Moving query not found")
-    return db_moving_query
 
-@app.put("/moving_queries/{query_id}", response_model=schemas.MovingQuery)
-def update_moving_query(query_id: int, moving_query: schemas.MovingQueryCreate, db: Session = Depends(get_db)):
-    return crud.update_moving_query(db=db, query_id=query_id, moving_query=moving_query)
+    print(moving_query_data)
 
-@app.delete("/moving_queries/{query_id}", response_model=schemas.MovingQuery)
-def delete_moving_query(query_id: int, db: Session = Depends(get_db)):
-    return crud.delete_moving_query(db=db, query_id=query_id)
+    items_details = moving_query_data["items_details"]
+    availability = moving_query_data["availability"]
+    location_from = moving_query_data["location_from"]
+    location_to = moving_query_data["location_to"]
 
-# MovingCompany routes
-@app.post("/moving_companies/", response_model=schemas.MovingCompany)
-def create_moving_company(moving_company: schemas.MovingCompanyCreate, db: Session = Depends(get_db)):
-    return crud.create_moving_company(db=db, moving_company=moving_company)
+    return await services.create_phone_call(
+        moving_query_id=moving_query_id,
+        moving_company_id=moving_company_id,
+        moving_company_number=moving_company_number,
+        items=items_details,
+        availability=availability,
+        from_location=location_from,
+        to_location=location_to
+    )
+@app.post("/vapi_webhook_report/")
+def vapi_webhook_report(json_data: dict):
+    if json_data.get("message", {}).get("type") == "end-of-call-report":
+        # Extract the required fields
+        vapi_id = json_data["message"]["call"]["id"]
+        structured_data_price = json_data["message"]["analysis"]["structuredData"]["price"]
+        summary = json_data["message"]["analysis"]["summary"]
+        transcript = json_data["message"]["transcript"]
+        duration_minutes = json_data["message"]["durationMinutes"]
+        phone_number = json_data["message"]["customer"]["number"]
 
-@app.get("/moving_companies/{company_id}", response_model=schemas.MovingCompany)
-def read_moving_company(company_id: int, db: Session = Depends(get_db)):
-    db_moving_company = crud.get_moving_company(db, company_id=company_id)
-    if db_moving_company is None:
-        raise HTTPException(status_code=404, detail="Moving company not found")
-    return db_moving_company
-
-@app.put("/moving_companies/{company_id}", response_model=schemas.MovingCompany)
-def update_moving_company(company_id: int, moving_company: schemas.MovingCompanyCreate, db: Session = Depends(get_db)):
-    return crud.update_moving_company(db=db, company_id=company_id, moving_company=moving_company)
-
-@app.delete("/moving_companies/{company_id}", response_model=schemas.MovingCompany)
-def delete_moving_company(company_id: int, db: Session = Depends(get_db)):
-    return crud.delete_moving_company(db=db, company_id=company_id)
-
-# PhoneCalls routes
-@app.post("/phone_calls/", response_model=schemas.PhoneCall)
-def create_phone_call(phone_call: schemas.PhoneCallCreate, db: Session = Depends(get_db)):
-    return crud.create_phone_call(db=db, phone_call=phone_call)
-
-@app.get("/phone_calls/{call_id}", response_model=schemas.PhoneCall)
-def read_phone_call(call_id: int, db: Session = Depends(get_db)):
-    db_phone_call = crud.get_phone_call(db, call_id=call_id)
-    if db_phone_call is None:
-        raise HTTPException(status_code=404, detail="Phone call not found")
-    return db_phone_call
-
-@app.put("/phone_calls/{call_id}", response_model=schemas.PhoneCall)
-def update_phone_call(call_id: int, phone_call: schemas.PhoneCallCreate, db: Session = Depends(get_db)):
-    return crud.update_phone_call(db=db, call_id=call_id, phone_call=phone_call)
-
-@app.delete("/phone_calls/{call_id}", response_model=schemas.PhoneCall)
-def delete_phone_call(call_id: int, db: Session = Depends(get_db)):
-    return crud.delete_phone_call(db=db, call_id=call_id)
-
+        print(f"VAPI ID: {vapi_id}")
+        print(f"Structured Data Price: {structured_data_price}")
+        print(f"Summary: {summary}")
+        print(f"Transcript: {transcript}")
+        print(f"Duration Minutes: {duration_minutes}")
+        print(f"Phone Number: {phone_number}")
+        
+        update_finished_call(vapi_id, phone_number, structured_data_price, summary, transcript, duration_minutes)
+        
+    else:
+        return None
