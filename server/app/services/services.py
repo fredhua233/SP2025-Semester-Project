@@ -5,7 +5,7 @@ import requests
 from app.utils import get_lat_long
 # from app.models import models
 from app.schemas import schemas
-from app.database.database import get_or_create_moving_company, create_inquiry, update_vapi_id
+from app.database.database import get_or_create_moving_company, create_inquiry
 import os
 from dotenv import load_dotenv
 
@@ -52,61 +52,52 @@ async def get_moving_companies(moving_query: schemas.MovingQuery, moving_query_i
             "phone_number": phone_number,
         }
         company_id = get_or_create_moving_company(company)
-        create_inquiry(moving_query_id, phone_number, company_id)
+        create_inquiry(moving_query_id, company_id)
 
         nearby_companies.append(company)
+        
+
+    
+    return {"moving_companies": nearby_companies}
 
 
 
 # Function that takes moving companies and makes a phone call to each of them
-async def create_phone_call(moving_query_id, moving_company_id, moving_company_number, items, availability, from_location, to_location):
+async def create_phone_call(moving_company_number, items, availability, from_location, to_location):
     vapi_api = os.getenv("VAPI_API_KEY")
     phone_id = os.getenv("VAPI_PHONE_ID")
     
     data = {
-        # 'assistant': {
-        #     "firstMessage": "Hi! I'm calling for a quote on my move, is this a good time?",
-        #     "model": {
-        #         "provider": "groq",
-        #         "model": "llama-3.3-70b-versatile",
-        #         "messages": [
-        #             {
-        #                 "role": "system",
-        #                 "content": f"""You are calling a moving company and get a quote for your move.
-        #                 Your task is to share the following details about the move with the moving company:
-        #                 1. Introduce yourself: 
-        #                     “Hi, I'm calling for a moving quote.”
-        #                 2. Share Move Details:
-        #                     "I am moving from {from_location} to {to_location}."
-        #                     "I'm looking to move {items}"
-        #                     "I'm available on {availability} for the move."
-        #                 3. Ask for the Quote: Directly request the quote and clarify what's included (e.g., labor, truck fees), make sure to ask the company how this quote is broken down and calculated.
-        #                     Stay Focused: Politely keep the conversation on track if they go off-topic.
-        #                 4. Wrap Up: 
-        #                     Summarize: “Thanks for the quote! I'll share this with the customer, and they'll follow up if needed.”
-        #                     Your only goal is to get the quote efficiently and professionally. Keep it short, friendly, and on-task."""
-        #             }
-        #         ]
-        #     },
-        #     "voice": "jennifer-playht"
-        # },
-        # 'phoneNumberId': phone_id,
-        # 'customer': {
-        #     'number': moving_company_number, # +14157698863
-        # },
-        "assistantId": "829127fc-0226-4766-9160-79c7db241fa2",
-        "assistantOverrides": {
-            "variableValues": {
-                "from_location": from_location,
-                "to_location": to_location,
-                "items": items,
-                "availability": availability
-            }
+        'assistant': {
+            "firstMessage": "Hi! I'm calling for a quote on my move, is this a good time?",
+            "model": {
+                "provider": "groq",
+                "model": "llama-3.3-70b-versatile",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": f"""You are calling a moving company and get a quote for your move.
+                        Your task is to share the following details about the move with the moving company:
+                        1. Introduce yourself: 
+                            “Hi, I'm calling for a moving quote.”
+                        2. Share Move Details:
+                            "I am moving from {from_location} to {to_location}."
+                            "I'm looking to move {items}"
+                            "I'm available on {availability} for the move."
+                        3. Ask for the Quote: Directly request the quote and clarify what's included (e.g., labor, truck fees), make sure to ask the company how this quote is broken down and calculated.
+                            Stay Focused: Politely keep the conversation on track if they go off-topic.
+                        4. Wrap Up: 
+                            Summarize: “Thanks for the quote! I'll share this with the customer, and they'll follow up if needed.”
+                            Your only goal is to get the quote efficiently and professionally. Keep it short, friendly, and on-task."""
+                    }
+                ]
+            },
+            "voice": "jennifer-playht"
         },
-        "customer": {
-            "number": moving_company_number
+        'phoneNumberId': {phone_id},
+        'customer': {
+            'number': {moving_company_number}, # +14157698863
         },
-        "phoneNumberId": phone_id
     }
     headers = {
         'Authorization': f'Bearer {vapi_api}',
@@ -117,8 +108,7 @@ async def create_phone_call(moving_query_id, moving_company_id, moving_company_n
 
     if response.status_code == 201:
         print('Call created successfully')
-        print(response.json().get("id"))
-        update_vapi_id(moving_query_id, moving_company_number, response.json().get("id"))
+        print(response.json())
         
     else:
         print('Failed to create call')
