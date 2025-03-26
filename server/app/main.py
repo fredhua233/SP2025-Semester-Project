@@ -52,7 +52,7 @@ def vapi_webhook_report(json_data: dict):
     if json_data.get("message", {}).get("type") == "end-of-call-report":
         # Extract the required fields
         vapi_id = json_data["message"]["call"]["id"]
-        structured_data_price = json_data["message"]["analysis"]["structured_data"]["price"]
+        structured_data_price = json_data["message"]["analysis"]["structuredData"]["price"]
         summary = json_data["message"]["analysis"]["summary"]
         transcript = json_data["message"]["transcript"]
         duration_minutes = json_data["message"]["duration_minutes"]

@@ -63,7 +63,7 @@ async def get_moving_companies(moving_query: schemas.MovingQuery, moving_query_i
     "user_ratings_total": 100,
     "latitude": 40.7128,  # Example latitude
     "longitude": -74.0060,  # Example longitude
-    "phone_number": "+14157698863",
+    "phone_number": "+14106885756",
     }
     company_id = get_or_create_moving_company(hardcoded_company)
     create_inquiry(moving_query_id, hardcoded_company["phone_number"], company_id)
