@@ -55,7 +55,7 @@ def vapi_webhook_report(json_data: dict):
         structured_data_price = json_data["message"]["analysis"]["structuredData"]["price"]
         summary = json_data["message"]["analysis"]["summary"]
         transcript = json_data["message"]["transcript"]
-        duration_minutes = json_data["message"]["duration_minutes"]
+        duration_minutes = json_data["message"]["durationMinutes"]
         phone_number = json_data["message"]["call"]["customer"]["number"]
         print(f"VAPI ID: {vapi_id}")
         print(f"Structured Data Price: {structured_data_price}")
