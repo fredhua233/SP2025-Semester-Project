@@ -75,12 +75,12 @@ struct MovingInquiry: Identifiable, Codable {
     let moving_company_id: Int
     let created_at: String
     let price: Int?
-    let phone_call_transcript: String
+    let phone_call_transcript: String?
     let moving_query_id: Int
     let phone_number: String
     let vapi_call_id: String?
     let in_progress: Bool
-    let call_duration: Int?
+    let call_duration: Float?
     let summary: String?
     enum CodingKeys: String, CodingKey {
         case id

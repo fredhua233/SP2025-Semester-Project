@@ -23,6 +23,8 @@ struct QuoteResultsView: View {
     @State private var movingInquiries: [MovingInquiry] = []
     @State private var movingCompanies: [MovingCompany] = []
     @State private var realtimeChannel: RealtimeChannelV2?  // Holds the realtime channel
+    @State private var selectedCompany: MovingCompany?
+    @State private var isCompanyViewActive = false
 
     var body: some View {
         NavigationStack {
@@ -53,7 +55,17 @@ struct QuoteResultsView: View {
 
             }
             .onDisappear {
+                // Cleanup if needed
             }
+            // NavigationLink to overlay the CompanyView
+            .background(
+                NavigationLink(
+                    destination: CompanyView(company: selectedCompany),
+                    isActive: $isCompanyViewActive,
+                    label: { EmptyView() }
+                )
+                .hidden()
+            )
         }
     }
 
@@ -114,9 +126,9 @@ struct QuoteResultsView: View {
                     .padding(.vertical, 8)
                     Spacer()
                     Button(action: {
-                        makeCall(phoneNumber: inquiry.phone_number, id: company.id, inquiryID: inquiry.id)
+                        navigateToCompanyView(company: company)
                     }) {
-                        Image(systemName: "phone.fill")
+                        Image(systemName: "info.circle.fill")
                             .foregroundColor(.blue)
                             .padding()
                     }
@@ -124,29 +136,49 @@ struct QuoteResultsView: View {
             )
         case (-1, true):
             return AnyView(
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(company.name)
-                        .font(.headline)
-                    Text("Status: In Progress")
-                        .font(.subheadline)
-                        .foregroundColor(.green)
-                    Divider()
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(company.name)
+                            .font(.headline)
+                        Text("Status: In Progress")
+                            .font(.subheadline)
+                            .foregroundColor(.green)
+                        Divider()
+                    }
+                    .padding(.vertical, 8)
+                    Spacer()
+                    Button(action: {
+                        navigateToCompanyView(company: company)
+                    }) {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(.blue)
+                            .padding()
+                    }
                 }
-                .padding(.vertical, 8)
             )
         default:
             return AnyView(
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(company.name)
-                        .font(.headline)
-                    Text("Phone: \(company.phoneNumber)")
-                        .font(.subheadline)
-                        .foregroundColor(.blue)
-                    Text("Price: \(inquiry.price)")
-                        .font(.subheadline)
-                    Divider()
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(company.name)
+                            .font(.headline)
+                        Text("Phone: \(company.phoneNumber)")
+                            .font(.subheadline)
+                            .foregroundColor(.blue)
+                        Text("Price: \(inquiry.price)")
+                            .font(.subheadline)
+                        Divider()
+                    }
+                    .padding(.vertical, 8)
+                    Spacer()
+                    Button(action: {
+                        navigateToCompanyView(company: company)
+                    }) {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(.blue)
+                            .padding()
+                    }
                 }
-                .padding(.vertical, 8)
             )
         }
     }
@@ -253,6 +285,10 @@ struct QuoteResultsView: View {
                 await fetchMovingInquiries()
             }
         }
+    }
+    private func navigateToCompanyView(company: MovingCompany) {
+        selectedCompany = company
+        isCompanyViewActive = true
     }
 
 }

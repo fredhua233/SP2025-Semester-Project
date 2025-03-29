@@ -136,7 +136,6 @@ struct SearchFormView: View {
                 }
             }
 
-            print("API Response: \(responseString)")
             let responseData = Data(responseString.utf8)
             let jsonResponse = try JSONSerialization.jsonObject(with: responseData, options: []) as? [String: Any]
             guard let movingQueryID = jsonResponse?["moving_query_id"] as? Int else {
@@ -145,9 +144,7 @@ struct SearchFormView: View {
             movingQuery = movingQueryID
 
             movingCompanyIDs = try await fetchMovingCompanyIDs(for: movingQueryID)
-            print("🔍 Found Moving Company IDs: \(movingCompanyIDs)")
             movingInquiryIDS = try await fetchMovingInquiryIDs(for: movingQueryID)
-            print("🔍 Found Moving Inquiry IDs: \(movingInquiryIDS)")
             navigateToQuoteResults = true
         } catch {
             errorMessage = "Search failed: \(error.localizedDescription)"
