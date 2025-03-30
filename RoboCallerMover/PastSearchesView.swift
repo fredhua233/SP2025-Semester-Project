@@ -100,7 +100,7 @@ struct PastSearchesView: View {
             // Decode the response into an array of MovingQuery objects.
             let queries = try JSONDecoder().decode([MovingQuery].self, from: response.data)
             await MainActor.run {
-                self.pastSearches = queries
+                self.pastSearches = queries.reversed() // Reverse the order to show newest first
                 self.isLoading = false
             }
         } catch {

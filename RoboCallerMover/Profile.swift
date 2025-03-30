@@ -60,11 +60,17 @@ struct MovingCompany: Identifiable, Codable {
     let id: Int
     let name: String
     let phoneNumber: String
+    let address: String
+    let rating: Float
+    let user_ratings_total: Int
 
     enum CodingKeys: String, CodingKey {
         case id
         case name
         case phoneNumber = "phone_number" // Match Supabase column
+        case address
+        case rating
+        case user_ratings_total
     }
 }
 
