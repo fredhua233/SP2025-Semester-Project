@@ -55,12 +55,15 @@ struct CompanyView: View {
 
     @ViewBuilder
     private func coverImage() -> some View {
-        if let coverImageURL = URL(string: "https://lh5.googleusercontent.com/p/AF1QipOcZgYqgL4JC5VdWdx5tZycuYUfSUeT-6mvM3S-=w408-h357-k-no") {
-            AsyncImage(url: coverImageURL) { image in
+        let defaultImageURL = "https://t4.ftcdn.net/jpg/02/30/62/35/360_F_230623592_cQY0YbsQb523d3b0yqVFupoOxIRGwtEO.jpg"
+        let imageURL = company?.coverImage ?? defaultImageURL
+
+        if let url = URL(string: imageURL) {
+            AsyncImage(url: url) { image in
                 image
                     .resizable()
                     .scaledToFit()
-                    .frame(maxWidth: .infinity, maxHeight: 200)
+                    .frame(maxWidth: UIScreen.main.bounds.width * 0.9) // Resized to take almost the entire width
                     .cornerRadius(10)
             } placeholder: {
                 ProgressView()

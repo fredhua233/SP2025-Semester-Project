@@ -63,6 +63,7 @@ struct MovingCompany: Identifiable, Codable {
     let address: String
     let rating: Float
     let user_ratings_total: Int
+    let coverImage: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -71,6 +72,7 @@ struct MovingCompany: Identifiable, Codable {
         case address
         case rating
         case user_ratings_total
+        case coverImage
     }
 }
 
