@@ -103,26 +103,29 @@ struct SearchFormView: View {
         errorMessage = nil
 
         let created_at = ISO8601DateFormatter().string(from: Date())
-        let availability = "\(selectedDate)"
-
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MMMM d'\(daySuffix(for: selectedDate))', yyyy"
+        let availability = dateFormatter.string(from: selectedDate)
+        print("Availability: \(availability)")
+        
         do {
             // Retrieve userID properly with try await
             guard let session = session else {
-                errorMessage = "User session not found."
-                isLoading = false
-                return
+            errorMessage = "User session not found."
+            isLoading = false
+            return
             }
             let userID = session.user.id.uuidString
 
             let searchRequest = SearchRequest(
-                location_from: fromLocation,
-                location_to: toLocation,
-                created_at: created_at,
-                items: selectedMoveSize.rawValue,
-                items_details: moveDescription,
-                availability: availability,
-                user_id: userID,
-                inquiries: []
+            location_from: fromLocation,
+            location_to: toLocation,
+            created_at: created_at,
+            items: selectedMoveSize.rawValue,
+            items_details: moveDescription,
+            availability: availability,
+            user_id: userID,
+            inquiries: []
             )
 
             let responseString = try await withCheckedThrowingContinuation { continuation in
@@ -190,7 +193,27 @@ struct SearchFormView: View {
         let jsonData = response.data
         return try JSONDecoder().decode([MovingCompany].self, from: jsonData)
     }
+    private func daySuffix(for date: Date) -> String {
+        let calendar = Calendar.current
+        let day = calendar.component(.day, from: date)
 
+        switch day {
+        case 1, 21, 31:
+            return "st"
+        case 2, 22:
+            return "nd"
+        case 3, 23:
+            return "rd"
+        default:
+            return "th"
+        }
+    }
+
+    // Correct the syntax error and ensure proper use of 'private'
+    private func someFunction() {
+        let value = 10 // Example statement
+        print(value) // Example statement
+    }
 
 }
 
