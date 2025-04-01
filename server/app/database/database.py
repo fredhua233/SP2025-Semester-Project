@@ -60,7 +60,16 @@ def get_or_create_moving_company(company: dict) -> int:
         company_id = existing_company_response.data[0]["id"]
     else:
         # Insert the new company into the moving_company table
-        insert_response = supabase.table("moving_company").insert(company).execute()
+        insert_response = supabase.table("moving_company").insert({
+            "name": company["name"],
+            "address": company["address"],
+            "rating": company["rating"],
+            "user_ratings_total": company["user_ratings_total"],
+            "latitude": company["latitude"],
+            "longitude": company["longitude"],
+            "phone_number": company["phone_number"],
+            "coverImage": company["cover_image_url"],
+        }).execute()
         if not insert_response.data:
             raise HTTPException(status_code=500, detail="Error inserting new moving company")
         company_id = insert_response.data[0]["id"]

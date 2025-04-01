@@ -23,6 +23,9 @@ struct QuoteResultsView: View {
     @State private var movingInquiries: [MovingInquiry] = []
     @State private var movingCompanies: [MovingCompany] = []
     @State private var realtimeChannel: RealtimeChannelV2?  // Holds the realtime channel
+    @State private var selectedCompany: MovingCompany?
+    @State private var selectedInquiry: MovingInquiry?
+    @State private var isCompanyViewActive = false
 
     var body: some View {
         NavigationStack {
@@ -53,7 +56,21 @@ struct QuoteResultsView: View {
 
             }
             .onDisappear {
+                // Cleanup if needed
             }
+            // NavigationLink to overlay the CompanyView
+            .background(
+                NavigationLink(
+                    destination: CompanyView(company: selectedCompany,
+                    movingQueryID: movingQueryID,
+                    inquiry: selectedInquiry
+
+                    ),
+                    isActive: $isCompanyViewActive,
+                    label: { EmptyView() }
+                )
+                .hidden()
+            )
         }
     }
 
@@ -114,9 +131,9 @@ struct QuoteResultsView: View {
                     .padding(.vertical, 8)
                     Spacer()
                     Button(action: {
-                        makeCall(phoneNumber: inquiry.phone_number, id: company.id, inquiryID: inquiry.id)
+                        navigateToCompanyView(company: company, inquiry: inquiry)
                     }) {
-                        Image(systemName: "phone.fill")
+                        Image(systemName: "info.circle.fill")
                             .foregroundColor(.blue)
                             .padding()
                     }
@@ -124,76 +141,53 @@ struct QuoteResultsView: View {
             )
         case (-1, true):
             return AnyView(
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(company.name)
-                        .font(.headline)
-                    Text("Status: In Progress")
-                        .font(.subheadline)
-                        .foregroundColor(.green)
-                    Divider()
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(company.name)
+                            .font(.headline)
+                        Text("Status: In Progress")
+                            .font(.subheadline)
+                            .foregroundColor(.green)
+                        Divider()
+                    }
+                    .padding(.vertical, 8)
+                    Spacer()
+                    Button(action: {
+                        navigateToCompanyView(company: company, inquiry: inquiry)
+                    }) {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(.blue)
+                            .padding()
+                    }
                 }
-                .padding(.vertical, 8)
             )
         default:
             return AnyView(
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(company.name)
-                        .font(.headline)
-                    Text("Phone: \(company.phoneNumber)")
-                        .font(.subheadline)
-                        .foregroundColor(.blue)
-                    Text("Price: \(inquiry.price)")
-                        .font(.subheadline)
-                    Divider()
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(company.name)
+                            .font(.headline)
+                        Text("Phone: \(company.phoneNumber)")
+                            .font(.subheadline)
+                            .foregroundColor(.blue)
+                        Text("Price: \(inquiry.price)")
+                            .font(.subheadline)
+                        Divider()
+                    }
+                    .padding(.vertical, 8)
+                    Spacer()
+                    Button(action: {
+                        navigateToCompanyView(company: company, inquiry: inquiry)
+                    }) {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundColor(.blue)
+                            .padding()
+                    }
                 }
-                .padding(.vertical, 8)
             )
         }
     }
-    private func makeCall(phoneNumber: String, id: Int, inquiryID: Int) {
-        guard let url = URL(string: "http://127.0.0.1:8000/call_moving_companies/?moving_company_number=\(phoneNumber)&moving_company_id=\(id)&moving_query_id=\(movingQueryID)") else {
-            print("Invalid URL")
-            return
-        }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "accept")
-
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                print("Error making call: \(error)")
-                return
-            }
-
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                print("Server error")
-                return
-            }
-
-            if let data = data, let responseString = String(data: data, encoding: .utf8) {
-                print("Response: \(responseString)")
-            }
-
-            // Update the in_progress column in the moving_inquiry table
-            Task {
-                do {
-                    let updateResponse = try await supabase
-                        .from("moving_inquiry")
-                        .update(["in_progress": true])
-                        .eq("id", value: inquiryID)
-                        .execute()
-
-                    await fetchMovingInquiries()
-                } catch {
-                    print("Error updating in_progress column: \(error)")
-                }
-            }
-        }
-
-        task.resume()
-    }
     // MARK: - Fetch Initial Data
     private func fetchMovingCompanies() {
         isLoading = true
@@ -253,6 +247,11 @@ struct QuoteResultsView: View {
                 await fetchMovingInquiries()
             }
         }
+    }
+    private func navigateToCompanyView(company: MovingCompany, inquiry: MovingInquiry) {
+        selectedCompany = company
+        selectedInquiry = inquiry
+        isCompanyViewActive = true
     }
 
 }
