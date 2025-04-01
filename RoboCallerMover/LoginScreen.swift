@@ -10,6 +10,7 @@ import Supabase
 import CryptoKit
 
 struct LoginScreen: View {
+    
     @Binding var session: Session?
     @State private var email: String = ""
     @State private var password: String = ""
@@ -28,39 +29,71 @@ struct LoginScreen: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TextField("Email", text: $email)
-                        .textContentType(.emailAddress)
-                        .autocapitalization(.none)
-                    SecureField("Password", text: $password)
-                        .textContentType(.password)
-                }
+            ZStack {
+                Color("background").ignoresSafeArea()
 
-                if let errorMessage = errorMessage {
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                }
+                ScrollView {
+                    VStack(spacing: 10) {
+                        Image("movingLogo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 200)
 
-                Section {
-                    if isLoading {
-                        ProgressView()
-                    } else {
-                        Button("Sign In") {
-                            Task { await signIn() }
+                        Group {
+                            TextField("Email", text: $email)
+                                .textContentType(.emailAddress)
+                                .autocapitalization(.none)
+                                .padding()
+                                .background(Color.white)
+                                .cornerRadius(10)
+
+                            SecureField("Password", text: $password)
+                                .textContentType(.password)
+                                .padding()
+                                .background(Color.white)
+                                .cornerRadius(10)
                         }
-                        .disabled(isLocked)
-                        
-                        Button("Create Account") {
-                            showingRegisterSheet.toggle()
+
+                        if let errorMessage = errorMessage {
+                            Text(errorMessage)
+                                .foregroundColor(.red)
                         }
+
+                        if isLoading {
+                            ProgressView()
+                        } else {
+                            Button("Sign In                   ") {
+                                Task { await signIn() }
+                            }
+                            .padding(.horizontal, 32)
+                            .padding(.vertical, 7)
+                            .cornerRadius(10)
+                            .foregroundColor(Color.black)
+
+                            Button("  Create Account  ") {
+                                showingRegisterSheet.toggle()
+                            }
+                            .padding(.horizontal, 32)
+                            .padding(.vertical, 7)
+                            .cornerRadius(10)
+                            .foregroundColor(.black)
+                            
+
+                            Button("Forgot Password?") {
+                                showingResetSheet.toggle()
+                            }
+                            .padding(.horizontal, 32)
+                            .padding(.vertical, 7)
+                            .cornerRadius(10)
+                            .foregroundColor(.black)
+
+
+                        }
+
+                        Spacer()
                     }
-                }
-                
-                Section {
-                    Button("Forgot Password?") {
-                        showingResetSheet.toggle()
-                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 40)
                 }
             }
             .navigationTitle("Login")
@@ -75,6 +108,7 @@ struct LoginScreen: View {
             }
         }
     }
+
 
     private var passwordResetSheet: some View {
         NavigationStack {
@@ -223,86 +257,3 @@ struct LoginScreen_Previews: PreviewProvider {
         }
     }
 }
-
-
-////
-////  LoginScreen.swift
-////  RoboCallerMover
-////
-////  Created by Michelle Zheng on 2/25/25.
-////
-//
-//import SwiftUI
-//import Supabase
-//
-//
-//struct LoginScreen: View {
-//    @Binding var session: Session?
-//    @State private var email: String = ""
-//    @State private var password: String = ""
-//    @State private var isLoading: Bool = false
-//    @State private var errorMessage: String?
-//    @State private var showingRegisterSheet = false
-//
-//    var body: some View {
-//        NavigationStack {
-//            Form {
-//                Section {
-//                    TextField("Email", text: $email)
-//                        .textContentType(.emailAddress)
-//                        .autocapitalization(.none)
-//                    SecureField("Password", text: $password)
-//                        .textContentType(.password)
-//                }
-//
-//                if let errorMessage = errorMessage {
-//                    Text(errorMessage)
-//                        .foregroundColor(.red)
-//                }
-//
-//                Section {
-//                    if isLoading {
-//                        ProgressView()
-//                    } else {
-//                        Button("Sign In") {
-//                            Task { await signIn() }
-//                        }
-//                        
-//                        Button("Create Account") {
-//                            showingRegisterSheet.toggle()
-//                        }
-//                    }
-//                }
-//            }
-//            .navigationTitle("Login")
-//            .sheet(isPresented: $showingRegisterSheet) {
-//                RegisterUserSheet(isPresented: $showingRegisterSheet, session: $session)
-//            }
-//            .navigationDestination(isPresented: Binding(get: { session != nil }, set: { _ in })) {
-//                RootTabView(session: $session)
-//            }
-//        }
-//    }
-//
-//    private func signIn() async {
-//        isLoading = true
-//        errorMessage = nil
-//
-//        do {
-//            let currentSession = try await supabase.auth.signIn(email: email, password: password)
-//            session = currentSession
-//        } catch {
-//            errorMessage = "Login failed: \(error.localizedDescription)"
-//        }
-//
-//        isLoading = false
-//    }
-//}
-//
-//struct LoginScreen_Previews: PreviewProvider {
-//    static var previews: some View {
-//        NavigationStack {
-//            LoginScreen(session: .constant(nil)) // Provide a mock Binding<Session?>
-//        }
-//    }
-//}

@@ -34,7 +34,7 @@ struct SearchFormView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
-                Text("Search for a Move").font(.title2).padding(.top)
+                Text("Search for a Move").font(.title2).padding(.top).foregroundColor(Color("MovingBlue"))
 
                 // "From" and "To" fields
                 TextField("From", text: $fromLocation).textFieldStyle(.roundedBorder)
@@ -46,7 +46,7 @@ struct SearchFormView: View {
                         Text(size.rawValue)
                     }
                 }
-                .pickerStyle(MenuPickerStyle())
+                .pickerStyle(MenuPickerStyle()).accentColor(Color("MovingBlue"))
 
                 // Move Description
                 TextEditor(text: $moveDescription)
@@ -66,10 +66,10 @@ struct SearchFormView: View {
                             await performSearch()
                         }
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Color("MovingBlue"))
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.black)
+                    .background(Color("background"))
                     .cornerRadius(8)
                 }
 
@@ -79,6 +79,11 @@ struct SearchFormView: View {
                 }
 
                 Spacer()
+                Image("movingLogo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 80)
+                    .padding(.bottom, 5)
             }
             .padding()
             // Navigate to QuoteResultsView when search completes
