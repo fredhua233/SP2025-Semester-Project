@@ -61,10 +61,11 @@ struct QuoteResultsView: View {
             // NavigationLink to overlay the CompanyView
             .background(
                 NavigationLink(
-                    destination: CompanyView(company: selectedCompany,
-                    movingQueryID: movingQueryID,
-                    inquiry: selectedInquiry
-
+                    destination: CompanyView(
+                        company: selectedCompany,
+                        movingQueryID: movingQueryID,
+                        movingInquiryID: selectedInquiry?.id ?? 0,
+                        initialInquiry: selectedInquiry
                     ),
                     isActive: $isCompanyViewActive,
                     label: { EmptyView() }

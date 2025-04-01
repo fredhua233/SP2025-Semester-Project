@@ -4,12 +4,20 @@ import Supabase
 struct CompanyView: View {
     let company: MovingCompany?
     let movingQueryID: Int
-    let inquiry: MovingInquiry?
+    let movingInquiryID: Int
+    @State private var inquiry: MovingInquiry?
+    init ( company: MovingCompany?, movingQueryID: Int, movingInquiryID: Int, initialInquiry: MovingInquiry? = nil) {
+        self.company = company
+        self.movingQueryID = movingQueryID
+        self.movingInquiryID = movingInquiryID
+        _inquiry = State(initialValue: initialInquiry)
+    }
+    
 
     var body: some View {
         ScrollView { // Added ScrollView to enable scrolling
             VStack(alignment: .leading, spacing: 16) {
-                if let company = company, let inquiry = inquiry {
+                if let company = company{
                     companyHeader(company)
                     callToGetPriceButton(inquiry: inquiry)
                     coverImage()
@@ -24,6 +32,9 @@ struct CompanyView: View {
         }
         .navigationTitle(company?.name ?? "Company Details")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            subscribeToRealtimeUpdates()
+        }
     }
 
     // MARK: - Subviews
@@ -37,8 +48,8 @@ struct CompanyView: View {
     }
 
     @ViewBuilder
-    private func callToGetPriceButton(inquiry: MovingInquiry) -> some View {
-        if !inquiry.in_progress && inquiry.price == -1 {
+    private func callToGetPriceButton(inquiry: MovingInquiry?) -> some View {
+        if let inquiry = inquiry, !inquiry.in_progress && inquiry.price == -1 {
             Button(action: {
                 makeCall()
             }) {
@@ -85,33 +96,65 @@ struct CompanyView: View {
     }
 
     @ViewBuilder
-    private func inquiryStatus(_ inquiry: MovingInquiry) -> some View {
-        if !inquiry.in_progress {
-            Text("Please make the call to get moving details")
-                .font(.subheadline)
-                .foregroundColor(.red)
-        } else if inquiry.in_progress && inquiry.price == -1 {
-            Text("Call is in progress, please wait while we get your price.")
-                .font(.subheadline)
-                .foregroundColor(.orange)
-        } else if inquiry.in_progress && inquiry.price != -1 {
-            Section(header: Text("Price").font(.headline)) {
-                Text("$\(inquiry.price ?? 0)")
-                    .font(.title)
-                    .bold()
-            }
+    private func inquiryStatus(_ inquiry: MovingInquiry?) -> some View {
+        if let inquiry = inquiry {
+            if !inquiry.in_progress {
+                Text("Please make the call to get moving details")
+                    .font(.subheadline)
+                    .foregroundColor(.red)
+            } else if inquiry.in_progress && inquiry.price == -1 {
+                Text("Call is in progress, please wait while we get your price.")
+                    .font(.subheadline)
+                    .foregroundColor(.orange)
+            } else if inquiry.in_progress && inquiry.price != -1 {
+                Section(header: Text("Price").font(.headline)) {
+                    Text("$\(inquiry.price ?? 0)")
+                        .font(.title)
+                        .bold()
+                }
 
-            Section(header: Text("Call Information").font(.headline)) {
-                Text("Duration: \(inquiry.call_duration ?? 0) minutes")
-                    .font(.subheadline)
-                Text("Summary: \(inquiry.summary ?? "No summary available")")
-                    .font(.subheadline)
-                Text("Full Transcript: \(inquiry.phone_call_transcript ?? "No transcript available")")
-                    .font(.subheadline)
+                Section(header: Text("Call Information").font(.headline)) {
+                    Text("Duration: \(inquiry.call_duration ?? 0) minutes")
+                        .font(.subheadline)
+                    Text("Summary: \(inquiry.summary ?? "No summary available")")
+                        .font(.subheadline)
+                    Text("Full Transcript: \(inquiry.phone_call_transcript ?? "No transcript available")")
+                        .font(.subheadline)
+                }
             }
+        } else {
+            Text("Inquiry details are not available.")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+        }
+    }
+    private func updateInquiry() async {
+        do {
+            let response = try await supabase
+                .from("moving_inquiry")
+                .select("*")
+                .eq("id", value: movingInquiryID)
+                .single()
+                .execute()
+
+            let data = response.data  // Direct assignment, since data is non-optional
+            
+            let updatedInquiry = try JSONDecoder().decode(MovingInquiry.self, from: data)
+            await MainActor.run {
+                inquiry = updatedInquiry
+            }
+        } catch {
+            print("Failed to update inquiry: \(error.localizedDescription)")
         }
     }
 
+    private func subscribeToRealtimeUpdates() {
+        Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
+            Task {
+                await updateInquiry()
+            }
+        }
+    }
     // MARK: - Make Call Function
     private func makeCall() {
         guard let inquiry = inquiry else {
@@ -159,5 +202,10 @@ struct CompanyView: View {
         }
 
         task.resume()
+
+        // Call this function to update the inquiry status after making the call
+        Task {
+            await updateInquiry()
+        }
     }
 }
