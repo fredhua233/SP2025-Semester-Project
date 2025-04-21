@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movemate
+  labels:
+    app: movemate
+spec:
+  selector:
+    matchLabels:
+      app: movemate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: movemate
+    spec:
+      containers:
+        - name: movemate-backend
+          image: fredhua03/movemate/backend:newest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: APP_APPLICATION_HOST
+              value: 0.0.0.0
+    
