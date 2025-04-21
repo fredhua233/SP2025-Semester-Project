@@ -90,6 +90,8 @@ struct MovingInquiry: Identifiable, Codable {
     let in_progress: Bool
     let call_duration: Float?
     let summary: String?
+    let recording_url: String?
+
     enum CodingKeys: String, CodingKey {
         case id
         case moving_company_id
@@ -102,6 +104,7 @@ struct MovingInquiry: Identifiable, Codable {
         case in_progress
         case call_duration
         case summary
+        case recording_url
     }
 }
 

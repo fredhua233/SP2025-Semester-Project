@@ -1,11 +1,16 @@
 import SwiftUI
 import Supabase
+import AVKit
+import AVFoundation
 
 struct CompanyView: View {
     let company: MovingCompany?
     let movingQueryID: Int
     let movingInquiryID: Int
     @State private var inquiry: MovingInquiry?
+    @State private var player: AVPlayer?
+    @State private var isPlaying = false
+    @State private var playerError: String?
     init ( company: MovingCompany?, movingQueryID: Int, movingInquiryID: Int, initialInquiry: MovingInquiry? = nil) {
         self.company = company
         self.movingQueryID = movingQueryID
@@ -121,6 +126,73 @@ struct CompanyView: View {
                     Text("Full Transcript: \(inquiry.phone_call_transcript ?? "No transcript available")")
                         .font(.subheadline)
                 }
+                
+                if let recordingUrl = inquiry.recording_url, !recordingUrl.isEmpty {
+                    Section(header: Text("Recording").font(.headline)) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Button(action: {
+                                if isPlaying {
+                                    // Pause playback
+                                    player?.pause()
+                                    isPlaying = false
+                                } else {
+                                    if player == nil {
+                                        // First time playing or player was released
+                                        if let url = URL(string: recordingUrl) {
+                                            // Set up audio session
+                                            do {
+                                                try AVAudioSession.sharedInstance().setCategory(.playback)
+                                                try AVAudioSession.sharedInstance().setActive(true)
+                                            } catch {
+                                                playerError = "Audio session error: \(error.localizedDescription)"
+                                                return
+                                            }
+                                            
+                                            player = AVPlayer(url: url)
+                                            
+                                            // Add observer for when playback ends
+                                            NotificationCenter.default.addObserver(
+                                                forName: .AVPlayerItemDidPlayToEndTime,
+                                                object: player?.currentItem,
+                                                queue: .main) { _ in
+                                                    isPlaying = false
+                                                }
+                                        } else {
+                                            playerError = "Invalid URL: \(recordingUrl)"
+                                            return
+                                        }
+                                    }
+                                    
+                                    // Start playback
+                                    player?.play()
+                                    isPlaying = true
+                                    playerError = nil
+                                }
+                            }) {
+                                HStack {
+                                    Image(systemName: isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                                        .font(.title2)
+                                    Text(isPlaying ? "Pause Recording" : "Play Recording")
+                                        .font(.subheadline)
+                                }
+                                .foregroundColor(.blue)
+                                .padding(.vertical, 8)
+                            }
+                            
+                            if isPlaying {
+                                Text("Audio is playing...")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
+                            }
+                            
+                            if let error = playerError {
+                                Text(error)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
+                }
             }
         } else {
             Text("Inquiry details are not available.")
@@ -208,4 +280,31 @@ struct CompanyView: View {
             await updateInquiry()
         }
     }
+}
+
+// Audio player delegate to handle playback completion
+class PlaybackDelegate: NSObject, AVAudioPlayerDelegate {
+    var onCompletion: () -> Void
+    
+    init(onCompletion: @escaping () -> Void) {
+        self.onCompletion = onCompletion
+    }
+    
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        onCompletion()
+    }
+}
+
+// Custom SwiftUI view to wrap AVPlayerViewController
+struct PlayerView: UIViewControllerRepresentable {
+    let player: AVPlayer
+    
+    func makeUIViewController(context: Context) -> AVPlayerViewController {
+        let controller = AVPlayerViewController()
+        controller.player = player
+        controller.player?.play()
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {}
 }
