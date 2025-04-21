@@ -12,23 +12,40 @@ struct CallTranscriptCompanyView: View {
     @State private var callTranscript: String = "Loading transcript..."
 
     var body: some View {
-        VStack {
-            Text("Call Transcript for \(quote.companyName)")
-                .font(.largeTitle)
-                .padding(.bottom, 20)
+        ZStack {
+                Color("background").ignoresSafeArea()
 
-            TextEditor(text: $callTranscript)
-                .frame(height: 300)
-                .border(Color.gray.opacity(0.3))
-                .padding()
+                VStack(spacing: 20) {
+                    Text("Call Transcript for \(quote.companyName)")
+                        .font(.title)
+                        .bold()
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(Color("MovingBlue"))
+                        .padding(.horizontal, 24)
+                        .padding(.top, 40)
 
-            Spacer()
+                    TextEditor(text: $callTranscript)
+                        .frame(height: 300)
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(10)
+                        .shadow(radius: 1)
+                        .padding(.horizontal, 24)
+
+                    Spacer()
+
+                    Image("movingLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 80, height: 80)
+                        .padding(.bottom, 20)
+                }
+                .padding(.horizontal, 24)
+            }
+            .onAppear {
+                fetchCallTranscript()
+            }
         }
-        .padding(.horizontal)
-        .onAppear {
-            fetchCallTranscript()
-        }
-    }
 
     private func fetchCallTranscript() {
         // TODO: Fetch transcript from backend

@@ -17,8 +17,9 @@ struct CompanyView: View {
     var body: some View {
         ScrollView { // Added ScrollView to enable scrolling
             VStack(alignment: .leading, spacing: 16) {
+                
                 if let company = company{
-                    companyHeader(company)
+                    //companyHeader(company)
                     callToGetPriceButton(inquiry: inquiry)
                     coverImage()
                     ratingSection(company)
@@ -58,7 +59,7 @@ struct CompanyView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.blue)
+                    .background(Color("MovingBlue"))
                     .cornerRadius(10)
             }
         }

@@ -40,7 +40,7 @@ struct PastSearchesView: View {
                                     Text("To: \(query.location_to)")
                                     Text("Date: \(query.availability)") // Alternatively, use query.created_at
                                         .font(.subheadline)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(Color("MovingBlue"))
                                 }
                                 Spacer()
                             }

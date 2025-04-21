@@ -80,6 +80,7 @@ struct QuoteResultsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Move Details")
                 .font(.title2)
+                .foregroundColor(Color("MovingBlue"))
                 .padding(.top)
             Text("From: \(fromLocation)")
                 .font(.subheadline)
@@ -98,6 +99,7 @@ struct QuoteResultsView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Available Moving Companies")
                 .font(.headline)
+                .foregroundColor(Color("MovingBlue"))
                 .padding(.horizontal)
             if movingCompanies.isEmpty {
                 Text("No moving companies found for your search.")
